@@ -3,11 +3,12 @@ from asyncio.tasks import Task
 from collections.abc import Awaitable
 import datetime
 from os import environ
+import pathlib
 from subprocess import PIPE, STDOUT, Popen
 from typing import Callable
 from websockets import Request, Response, ServerConnection
 from websockets.asyncio.server import serve
-from data import (
+from common.data import (
     ErrorResp,
     ExitResp,
     KillReq,
@@ -18,6 +19,7 @@ from data import (
     deserialize,
 )
 import logging
+from common.log import InterceptHandler
 
 
 class PsyncServer:
@@ -33,10 +35,10 @@ class PsyncServer:
             Default: "localhost"
     """
 
-    host: str = environ.get("PSYNC_HOST", "0.0.0.0")
+    host: str = environ.get("PSYNC_SERVER_IP", "0.0.0.0")
     """Local host for the server."""
 
-    port: int = int(environ.get("PSYNC_PORT", "5000"))
+    port: int = int(environ.get("PSYNC_SERVER_PORT", "5000"))
     """Exposed port for websocket connection."""
 
     origins: list[str] = (environ.get("PSYNC_ORIGINS", "localhost 127.0.0.1")).split()
@@ -71,7 +73,7 @@ class PsyncServer:
     def handle(self) -> Callable[[ServerConnection], Awaitable[None]]:
         async def inner(ws: ServerConnection):
             async for data in ws:
-                if isinstance(data, "bytes"):
+                if isinstance(data, bytes):
                     msg = data.decode()
                 else:
                     msg = data
@@ -95,22 +97,29 @@ class PsyncServer:
     async def open(self, req: OpenReq, ws: ServerConnection):
         addrs: tuple[str, str] = ws.remote_address  # pyright: ignore[reportAny]
         (host, _port) = addrs
-        try:
+        if self.sessions.get(host) is not None:
             self.sessions[host]
             resp = ErrorResp(msg="Process already open for this client.")
             await ws.send(serialize(resp))
-        except KeyError:
-            p = Popen(
-                executable=req.path,
-                args=req.args,
-                env=req.env,
-                stdout=PIPE,
-                stderr=STDOUT,
-            )
-            self.sessions[host] = p
-            self.tasks[host] = asyncio.create_task(self.log(ws, p))
-            resp = OkayResp()
-            await ws.send(serialize(resp))
+        else:
+            path = pathlib.Path.expanduser(req.path).resolve()
+            args = [str(path), *req.args]
+            logging.info(f"Running `{' '.join(args)}` with env {req.env}")
+            try:
+                p = Popen(
+                    args=args,
+                    env=req.env,
+                    stdout=PIPE,
+                    stderr=STDOUT,
+                )
+                self.sessions[host] = p
+                self.tasks[host] = asyncio.create_task(self.log(ws, p))
+                resp = OkayResp()
+                await ws.send(serialize(resp))
+            except Exception as e:
+                logging.error(f"Failed to run process with error {e}")
+                resp = ErrorResp(msg=f"Caught exception: {e}")
+                await ws.send(serialize(resp))
 
     async def log(self, ws: ServerConnection, process: Popen[bytes]):
         try:
@@ -118,15 +127,17 @@ class PsyncServer:
                 if process.stdout is not None:
                     for line in process.stdout:
                         await ws.send(serialize(LogResp(msg=line.decode("utf-8"))))
+            await ws.send(serialize(ExitResp(exit_code=str(process.returncode))))
         except KeyError:
             pass
 
     async def kill(self, _req: KillReq, ws: ServerConnection):
         addrs: tuple[str, str] = ws.remote_address  # pyright: ignore[reportAny]
         (host, _port) = addrs
-        try:
-            p = self.sessions[host]
-            task = self.tasks[host]
+
+        p = self.sessions.get(host)
+        task = self.tasks.get(host)
+        if p is not None and task is not None:
             p.kill()
             start = datetime.datetime.now()
             while p.poll() is None and not task.done():
@@ -139,7 +150,7 @@ class PsyncServer:
                 pass
             resp = ExitResp(str(p.returncode))
             await ws.send(serialize(resp))
-        except KeyError:
+        else:
             await ws.send(
                 serialize(
                     ErrorResp(msg="Tried to kill process, but no process was running.")
@@ -148,7 +159,11 @@ class PsyncServer:
         await ws.close()
 
 
-if __name__ == "__main__":
+def main():
     log_level = environ.get("PSYNC_LOG", "INFO").upper()
-    logging.basicConfig(level=log_level)
+    logging.basicConfig(handlers=[InterceptHandler()], level=log_level, force=True)
     asyncio.run(PsyncServer().serve())
+
+
+if __name__ == "__main__":
+    main()

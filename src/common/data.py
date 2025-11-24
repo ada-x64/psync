@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
 import re
 import shlex
 from enum import Enum
@@ -24,7 +25,7 @@ class RespKind(Enum):
 
 @dataclass
 class OpenReq:
-    path: str
+    path: Path
     args: list[str]
     env: Mapping[str, str]
     kind: ReqKind = ReqKind.Open
@@ -88,6 +89,18 @@ args_expr = re.compile(r"args='([^']+)'")
 parse_env_expr = re.compile(r"(\w+)=(\"[^\"]*\"|[^\s]+)")
 
 
+def deserialize_env(input: str) -> dict[str, str]:
+    env: dict[str, str] = dict()
+    env_match = env_expr.search(input)
+    if env_match is not None:
+        (env_raw,) = env_match.groups()
+        env_iter = parse_env_expr.finditer(env_raw)
+        for match in env_iter:
+            (key, val) = match.groups()
+            env[key] = val.replace('"', "")
+    return env
+
+
 def deserialize(msg: str) -> Req | Resp:
     [kind, rest] = msg.split(" ", 1)
     match kind:
@@ -97,27 +110,21 @@ def deserialize(msg: str) -> Req | Resp:
             path: str = ""
 
             path_match = path_expr.search(rest)
-            print(path_match)
             if path_match is None:
                 raise ValueError("Open expression MUST have path parameter")
             (path,) = path_match.groups()
 
             args_match = args_expr.search(rest)
-            print(args_match)
             if args_match is not None:
                 (args_raw,) = args_match.groups()
                 args = shlex.split(args_raw)
 
             env_match = env_expr.search(rest)
-            print(env_match)
             if env_match is not None:
                 (env_raw,) = env_match.groups()
-                env_iter = parse_env_expr.finditer(env_raw)
-                for match in env_iter:
-                    (key, val) = match.groups()
-                    env[key] = val.replace('"', "")
+                env = deserialize_env(env_raw)
 
-            return OpenReq(path=path, args=args, env=env)
+            return OpenReq(path=Path(path), args=args, env=env)
 
         case ReqKind.Kill.value:
             return KillReq()
