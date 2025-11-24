@@ -102,7 +102,14 @@ def deserialize_env(input: str) -> dict[str, str]:
 
 
 def deserialize(msg: str) -> Req | Resp:
-    [kind, rest] = msg.split(" ", 1)
+    try:
+        [kind, rest] = msg.split(" ", 1)
+    except Exception as e:
+        if msg == "okay":
+            return OkayResp()
+        else:
+            raise e
+
     match kind:
         case ReqKind.Open.value:
             env: dict[str, str] = dict()
@@ -134,8 +141,6 @@ def deserialize(msg: str) -> Req | Resp:
             return ExitResp(exit_code=rest)
         case RespKind.Error.value:
             return ErrorResp(msg=rest)
-        case RespKind.Okay.value:
-            return OkayResp()
 
         case _:
             raise ValueError("Could not match kind for message", msg)

@@ -3,7 +3,15 @@ import os
 import pathlib
 import subprocess
 import websockets
-from common.data import OpenReq, serialize
+from common.data import (
+    ErrorResp,
+    ExitResp,
+    LogResp,
+    OkayResp,
+    OpenReq,
+    deserialize,
+    serialize,
+)
 import logging
 from common.log import InterceptHandler
 from client.args import SERVER_IP, SERVER_PORT, USER, Args, parse_args
@@ -24,6 +32,45 @@ class PsyncClient:
             await ws.send(
                 serialize(OpenReq(path=self.path, env=self.env, args=self.args))
             )
+            async for data in ws:
+                if isinstance(data, bytes):
+                    msg = data.decode()
+                else:
+                    msg = data
+
+                logging.debug(f"Got message {msg}")
+                try:
+                    resp = deserialize(msg)
+                except ValueError as e:
+                    logging.error(
+                        f"Failed to deserialize message '{msg}' with error '{e}'"
+                    )
+                    await ws.close()
+                    exit(1)
+
+                match resp:
+                    case LogResp():
+                        print(resp.msg)
+                    case ErrorResp():
+                        logging.error(resp.msg)
+                        await ws.close()
+                        exit(1)
+                    case ExitResp():
+                        logging.info(f"Exiting with code {resp.exit_code}")
+                        await ws.close()
+                        exit(resp.exit_code)
+                    case OkayResp():
+                        logging.info("Running exectuable...")
+                    case _:
+                        logging.warning(f"Got unknown request {resp}")
+
+            # TODO
+            # echo log messages
+            # close on request
+            # catch SIGKILL and send to server
+            # wss impl
+            # dockerfile for server daemon with ssl cert
+            # probably not: stdin
 
 
 def rsync(args: Args):

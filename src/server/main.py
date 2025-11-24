@@ -81,7 +81,7 @@ class PsyncServer:
                 try:
                     req = deserialize(msg)
                 except ValueError as e:
-                    await ws.send(f"{e}")
+                    await ws.send(serialize(ErrorResp(f"{e}")))
                     continue
 
                 match req:
@@ -122,12 +122,25 @@ class PsyncServer:
                 await ws.send(serialize(resp))
 
     async def log(self, ws: ServerConnection, process: Popen[bytes]):
+        logging.info("in log fn")
         try:
             while process.poll() is None:
                 if process.stdout is not None:
                     for line in process.stdout:
                         await ws.send(serialize(LogResp(msg=line.decode("utf-8"))))
+            logging.info(f"done polling! {process.returncode}")
             await ws.send(serialize(ExitResp(exit_code=str(process.returncode))))
+            addrs: tuple[str, str] = ws.remote_address  # pyright: ignore[reportAny]
+            (host, _port) = addrs
+            try:
+                _ = self.tasks.pop(host)
+            except Exception:
+                pass
+            try:
+                _ = self.sessions.pop(host)
+            except Exception:
+                pass
+
         except KeyError:
             pass
 
