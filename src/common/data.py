@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
+import logging
 from pathlib import Path
 import re
 import shlex
@@ -102,11 +103,14 @@ def deserialize_env(input: str) -> dict[str, str]:
 
 
 def deserialize(msg: str) -> Req | Resp:
+    logging.debug(f"Got message {msg}")
     try:
         [kind, rest] = msg.split(" ", 1)
     except Exception as e:
         if msg == "okay":
             return OkayResp()
+        elif msg == "kill":
+            return KillReq()
         else:
             raise e
 
@@ -126,15 +130,10 @@ def deserialize(msg: str) -> Req | Resp:
                 (args_raw,) = args_match.groups()
                 args = shlex.split(args_raw)
 
-            env_match = env_expr.search(rest)
-            if env_match is not None:
-                (env_raw,) = env_match.groups()
-                env = deserialize_env(env_raw)
+            env = deserialize_env(rest)
 
             return OpenReq(path=Path(path), args=args, env=env)
 
-        case ReqKind.Kill.value:
-            return KillReq()
         case RespKind.Log.value:
             return LogResp(msg=rest)
         case RespKind.Exit.value:

@@ -1,11 +1,13 @@
 import asyncio
 import os
 import pathlib
+import signal
 import subprocess
 import websockets
 from common.data import (
     ErrorResp,
     ExitResp,
+    KillReq,
     LogResp,
     OkayResp,
     OpenReq,
@@ -21,14 +23,34 @@ class PsyncClient:
     args: list[str]
     env: dict[str, str]
     path: pathlib.Path
+    quit: bool = False
+    force_exit: bool = False
 
     def __init__(self, args: list[str], env: dict[str, str], path: pathlib.Path):
         self.args = args
         self.env = env
         self.path = path
 
+    def mk_handler(self, ws: websockets.ClientConnection):
+        async def inner():
+            if not self.force_exit:
+                logging.info("Gracefully shutting down...")
+                self.force_exit = True
+                await ws.send(serialize(KillReq()))
+                await ws.close()
+                asyncio.get_event_loop().stop()
+            else:
+                logging.warning("Got second SIGINT, shutting down")
+                asyncio.get_event_loop().stop()
+                raise Exception("Forced shutdown")
+
+        return lambda: asyncio.create_task(inner())
+
     async def run(self):
         async with websockets.connect(f"ws://{SERVER_IP}:{SERVER_PORT}") as ws:
+            asyncio.get_event_loop().add_signal_handler(
+                signal.SIGINT, self.mk_handler(ws)
+            )
             await ws.send(
                 serialize(OpenReq(path=self.path, env=self.env, args=self.args))
             )
@@ -38,7 +60,6 @@ class PsyncClient:
                 else:
                     msg = data
 
-                logging.debug(f"Got message {msg}")
                 try:
                     resp = deserialize(msg)
                 except ValueError as e:
@@ -50,7 +71,7 @@ class PsyncClient:
 
                 match resp:
                     case LogResp():
-                        print(resp.msg)
+                        print(resp.msg, end="")
                     case ErrorResp():
                         logging.error(resp.msg)
                         await ws.close()
@@ -65,9 +86,6 @@ class PsyncClient:
                         logging.warning(f"Got unknown request {resp}")
 
             # TODO
-            # echo log messages
-            # close on request
-            # catch SIGKILL and send to server
             # wss impl
             # dockerfile for server daemon with ssl cert
             # probably not: stdin
@@ -88,7 +106,7 @@ def rsync(args: Args):
         *args.extra,
         url,
     ]
-    logging.info(f"Running {' '.join(rsync_args)}")
+    logging.info(" ".join(rsync_args))
     p = subprocess.run(rsync_args)
     if p.returncode != 0:
         logging.error(f"Rsync failed with exit code {p.returncode}")

@@ -42,7 +42,7 @@ _action = parser.add_argument(
 
 SERVER_IP: str = os.environ.get("PSYNC_SERVER_IP", "127.0.0.1")
 SERVER_PORT: int = int(os.environ.get("PSYNC_SERVER_PORT", "5000"))
-USER = os.environ.get("PSYNC_SSH_USER", "")
+USER: str = os.environ.get("PSYNC_SSH_USER", "")
 
 
 def parse_args() -> Args:
@@ -68,9 +68,9 @@ def parse_args() -> Args:
         client_args = shlex.split(str(raw_args))  # pyright: ignore[reportAny]
 
     env: dict[str, str] = dict()
-    raw_env = args.get("args")
+    raw_env = args.get("env")
     if raw_env is not None:
-        env = deserialize_env(str(raw_env))  # pyright: ignore[reportAny]
+        env = deserialize_env(f"env='{raw_env}'")
 
     return Args(
         target_path=str(target_path),
