@@ -12,3 +12,4 @@ wheels/
 # project config
 .ropeproject
 .zed
+*.pem

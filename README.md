@@ -45,3 +45,17 @@ logs from the server.
 This is implemented around
 [python-socket.io](https://python-socketio.readthedocs.io/en/stable/index.html),
 so please consult [their webpage](https://socket.io) for any concerns.
+
+### SSL
+
+Please generate an SSL certificate. You can use the following one-line if you'd
+like.
+
+```sh
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 3650 -nodes \
+    -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=localhost" \
+    -addext "subjectAltName=DNS:localhost,DNS:psync-server,IP:127.0.0.1"
+```
+
+Note that this sets an alternate name as psync-server. This will be useful when
+deploying to docker.

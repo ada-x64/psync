@@ -43,6 +43,7 @@ _action = parser.add_argument(
 SERVER_IP: str = os.environ.get("PSYNC_SERVER_IP", "127.0.0.1")
 SERVER_PORT: int = int(os.environ.get("PSYNC_SERVER_PORT", "5000"))
 USER: str = os.environ.get("PSYNC_SSH_USER", "")
+SSL_CERT_PATH: str = os.environ.get("PSYNC_CERT_PATH", "~/.local/share/psync/cert.pem")
 
 
 def parse_args() -> Args:
@@ -60,7 +61,7 @@ def parse_args() -> Args:
     extra: list[str] = []
     extra_raw = args.get("extra")
     if extra_raw is not None:
-        extra = extra_raw
+        extra = extra_raw  # pyright: ignore[reportAny]
 
     client_args: list[str] = []
     raw_args = args.get("args")

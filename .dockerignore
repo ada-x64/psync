@@ -1,0 +1,6 @@
+.venv
+.doc
+.zed
+.gitignore
+example.py
+README.md

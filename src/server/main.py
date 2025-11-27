@@ -6,6 +6,7 @@ from os import environ
 from os.path import basename
 import pathlib
 import signal
+import ssl
 from typing import Callable
 from websockets import (
     ConnectionClosedError,
@@ -35,6 +36,13 @@ def get_host(ws: ServerConnection) -> str:
     return host
 
 
+SSL_CERT_PATH: str = environ.get("SSL_CERT_PATH", "./cert.pem")
+SSL_KEY_PATH: str = environ.get("SSL_KEY_PATH", "./key.pem")
+PSYNC_HOST: str = environ.get("PSYNC_SERVER_IP", "0.0.0.0")
+PSYNC_PORT: str = environ.get("PSYNC_SERVER_PORT", "5000")
+PSYNC_ORIGINS: str = environ.get("PSYNC_ORIGINS", "localhost 127.0.0.1")
+
+
 class PsyncServer:
     """
     The main interface for the psync websocker server.
@@ -46,15 +54,19 @@ class PsyncServer:
             Default: 5000
         PSYNC_ORIGINS: Space-separated list of allowed foreign origins.
             Default: "localhost"
+        SSL_CERT_PATH: Path to the SSL certification file.
+            Default: "./cert.pem"
+        SSL_KEY_PATH: Path to the SSL key file.
+            Default: "./key.pem"
     """
 
-    host: str = environ.get("PSYNC_SERVER_IP", "0.0.0.0")
+    host: str = PSYNC_HOST
     """Local host for the server."""
 
-    port: int = int(environ.get("PSYNC_SERVER_PORT", "5000"))
+    port: int = int(PSYNC_PORT)
     """Exposed port for websocket connection."""
 
-    origins: list[str] = (environ.get("PSYNC_ORIGINS", "localhost 127.0.0.1")).split()
+    origins: list[str] = (PSYNC_ORIGINS).split()
     """Allowed origins for websocket connections."""
 
     sessions: dict[str, Process] = {}
@@ -68,11 +80,18 @@ class PsyncServer:
     coroutine: Task[None] | None = None
 
     async def serve(self) -> None:
+        ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_ctx.load_cert_chain(
+            pathlib.Path(SSL_CERT_PATH).expanduser(),
+            pathlib.Path(SSL_KEY_PATH).expanduser(),
+        )
+        print(ssl_ctx.get_ca_certs())
         server = await serve(
             (self.handle()),
             self.host,
             self.port,
             process_request=self.process_request(),
+            ssl=ssl_ctx,
         )
         self.coroutine = asyncio.create_task(server.serve_forever())
         try:

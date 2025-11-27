@@ -2,6 +2,7 @@ import asyncio
 import os
 import pathlib
 import signal
+import ssl
 import subprocess
 import websockets
 from common.data import (
@@ -16,7 +17,7 @@ from common.data import (
 )
 import logging
 from common.log import InterceptHandler
-from client.args import SERVER_IP, SERVER_PORT, USER, Args, parse_args
+from client.args import SERVER_IP, SERVER_PORT, USER, SSL_CERT_PATH, Args, parse_args
 
 
 class PsyncClient:
@@ -47,7 +48,13 @@ class PsyncClient:
         return lambda: asyncio.create_task(inner())
 
     async def run(self):
-        async with websockets.connect(f"ws://{SERVER_IP}:{SERVER_PORT}") as ws:
+        ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ssl_ctx.load_verify_locations(pathlib.Path(SSL_CERT_PATH).expanduser())
+        ssl_ctx.check_hostname = False  # not ideal
+        print(ssl_ctx.get_ca_certs())
+        async with websockets.connect(
+            f"wss://{SERVER_IP}:{SERVER_PORT}", ssl=ssl_ctx
+        ) as ws:
             asyncio.get_event_loop().add_signal_handler(
                 signal.SIGINT, self.mk_handler(ws)
             )
