@@ -1,3 +1,7 @@
+"""
+psync client
+"""
+
 import asyncio
 import os
 import pathlib
@@ -21,22 +25,53 @@ from client.args import SERVER_IP, SERVER_PORT, USER, SSL_CERT_PATH, Args, parse
 
 
 class PsyncClient:
-    args: list[str]
-    env: dict[str, str]
-    path: pathlib.Path
-    quit: bool = False
-    force_exit: bool = False
+    """
+    The primary interface for psync. The client CLI allows users to sync files with
+    rsync, then execute them remotely while receiving the logs.
+
+    CLI arguments: ::
+
+        usage: psync-client [-h] --path PATH [--extra EXTRA [EXTRA ...]] [--env ENV] [--args ARGS]
+
+        Client for the psync server.
+
+        options:
+          -h, --help            show this help message and exit
+          --path, -p PATH       Path to the target exectuable.
+          --extra, -E EXTRA [EXTRA ...]
+                                Extra files or directories to be synced to the destination path.
+          --env, -e ENV         Environment variables to set in the remote execution environment. Variables
+                                must be space-sepated or double-quoted.
+          --args, -a ARGS       Arguments with which to run the remote executable.
+
+    Environment configuration:
+        PSYNC_SERVER_IP: The IP address of the server instance.
+            Default: 127.0.0.1
+        PSYNC_SERVER_PORT: The port of the server instance.
+            Default: 5000
+        PSYNC_SSH_USER: The SSH user for rsync.
+            Default: Unset. Will use the default ssh user.
+        PSYNC_CERT_PATH: Path to the SSL certificate. Used to trust self-signed certs. Should
+            match the server's certificate.
+            Default: ~/.local/share/psync/cert.pem
+    """
+
+    __args: list[str]
+    __env: dict[str, str]
+    __path: pathlib.Path
+    __quit: bool = False
+    __force_exit: bool = False
 
     def __init__(self, args: list[str], env: dict[str, str], path: pathlib.Path):
-        self.args = args
-        self.env = env
-        self.path = path
+        self.__args = args
+        self.__env = env
+        self.__path = path
 
-    def mk_handler(self, ws: websockets.ClientConnection):
+    def __mk_handler(self, ws: websockets.ClientConnection):
         async def inner():
-            if not self.force_exit:
+            if not self.__force_exit:
                 logging.info("Gracefully shutting down...")
-                self.force_exit = True
+                self.__force_exit = True
                 await ws.send(serialize(KillReq()))
                 await ws.close()
                 asyncio.get_event_loop().stop()
@@ -48,6 +83,7 @@ class PsyncClient:
         return lambda: asyncio.create_task(inner())
 
     async def run(self):
+        """Run the client instance."""
         ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_ctx.load_verify_locations(pathlib.Path(SSL_CERT_PATH).expanduser())
         ssl_ctx.check_hostname = False  # not ideal
@@ -56,10 +92,10 @@ class PsyncClient:
             f"wss://{SERVER_IP}:{SERVER_PORT}", ssl=ssl_ctx
         ) as ws:
             asyncio.get_event_loop().add_signal_handler(
-                signal.SIGINT, self.mk_handler(ws)
+                signal.SIGINT, self.__mk_handler(ws)
             )
             await ws.send(
-                serialize(OpenReq(path=self.path, env=self.env, args=self.args))
+                serialize(OpenReq(path=self.__path, env=self.__env, args=self.__args))
             )
             async for data in ws:
                 if isinstance(data, bytes):
@@ -92,13 +128,9 @@ class PsyncClient:
                     case _:
                         logging.warning(f"Got unknown request {resp}")
 
-            # TODO
-            # wss impl
-            # dockerfile for server daemon with ssl cert
-            # probably not: stdin
 
-
-def rsync(args: Args):
+def __rsync(args: Args):
+    """Runs rsync."""
     if USER != "":
         user = f"{USER}@"
     else:
@@ -121,11 +153,15 @@ def rsync(args: Args):
 
 
 def main():
+    """
+    The main executable.
+    Sync project files with rsync, then run the client.
+    """
     log_level = os.environ.get("PSYNC_LOG", "INFO").upper()
     logging.basicConfig(handlers=[InterceptHandler()], level=log_level, force=True)
 
     args = parse_args()
-    rsync(args)
+    __rsync(args)
 
     client_path = pathlib.Path(f"{args.dest_path}/{os.path.basename(args.target_path)}")
     client = PsyncClient(args=args.args, env=args.env, path=client_path)
