@@ -5,7 +5,12 @@ client and server.
 
 ## Features
 
--
+- Project syncing with rsync (requires ssh)
+- Execute project binary on daemon host
+- Real-time logging based on websockets
+- Natural Ctrl-C / SIGINT handling on client and server
+- SSL authentication
+- Containerized for easy deployment
 
 ## Example usecase
 
@@ -42,12 +47,6 @@ logs from the server.
 
 ## Security
 
-This is implemented around
-[python-socket.io](https://python-socketio.readthedocs.io/en/stable/index.html),
-so please consult [their webpage](https://socket.io) for any concerns.
-
-### SSL
-
 Please generate an SSL certificate. You can use the following one-line if you'd
 like.
 
@@ -59,3 +58,7 @@ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 3
 
 Note that this sets an alternate name as psync-server. This will be useful when
 deploying to docker.
+
+I recommend that you _do not expose this over the wire._ I am only using it over
+my local network. If you intend on serving this over the WAN, you should use
+something like [ZeroTier](https://www.zerotier.com) to secure your connection.
