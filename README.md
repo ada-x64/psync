@@ -1,4 +1,6 @@
-![psync logo - a sketch of a pigeon behind the word 'psync'](./.doc/logo.png)
+<div align="center">
+<img src="./.doc/logo.png" height=250 />
+</div>
 
 **psync** is a simple tool to sync your project over SSH. It consists of a
 client and server.
