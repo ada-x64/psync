@@ -40,12 +40,12 @@ jobs:
               uses: macbre/push-to-ghcr@master
               with:
                   image_name: ${{ github.user }}/psync-client
-                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  github_token: ${{ secrets.PSYNC_DOCKER_KEY }}
                   dockerfile: ./client.dockerfile
 
             - name: Publish server to ghcr
               uses: macbre/push-to-ghcr@master
               with:
                   image_name: ${{ github.user }}/psync-server
-                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  github_token: ${{ secrets.PSYNC_DOCKER_KEY }}
                   dockerfile: ./server.dockerfile
