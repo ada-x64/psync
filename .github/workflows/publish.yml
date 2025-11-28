@@ -1,4 +1,5 @@
-name: Build and publish a Docker image to ghcr.io
+name: Build and publish Python package and Docker images
+
 on:
     # publish on releases, e.g. v2.1.13 (image tagged as "2.1.13" - "v" prefix is removed)
     release:
@@ -12,12 +13,11 @@ on:
 jobs:
     pypi_publish:
         runs-on: ubuntu-latest
-        environment:
-          - name: pypi
-          permissions:
+        environment: pypi
+        permissions:
             id-token: write
             contents: read
-          steps:
+        steps:
             - name: Checkout
               uses: actions/checkout@v5
             - name: Install uv
@@ -30,8 +30,7 @@ jobs:
               run: uv publish
 
     docker_publish:
-        runs-on: "ubuntu-latest"
-
+        runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v2
 
@@ -40,7 +39,7 @@ jobs:
               uses: macbre/push-to-ghcr@master
               with:
                   image_name: ${{ github.user }}/psync-client
-                  github_token: ${{ secrets.PSYNC_DOCKER_KEY }}
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
                   dockerfile: ./client.dockerfile
 
             - name: Publish server to ghcr
