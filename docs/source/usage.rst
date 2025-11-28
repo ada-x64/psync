@@ -1,10 +1,30 @@
 Usage
 =====
 
+Setup
+-----
+
+You will need to be able to reciprocally SSH into your target machines. The
+below describes my setup, though you can set it up however you'd like.
+
+.. image:: ../static/psync-info-light.png
+    :align: center
+    :class: only-light
+
+.. image:: ../static/psync-info-dark.png
+    :align: center
+    :class: only-dark
+
+The network should be secure. I recommend that you **do not run this over the WAN**, and if you do,
+you should use a secure tunnel like `zerotier`_.
+
+.. _zerotier: https://zerotier.com
+
 Server
 ------
 
-It is recommend to run the server in a docker container. You can run the server
+It is recommend to run the server in a docker container. This improve security
+by isolating binaries, and improves ease of setup. You can run the server
 manually, or the server can be set up to run as a daemon on Linux with a simple
 systemd service.
 
@@ -58,3 +78,19 @@ admin access to your system in case of bad actor intervention. This can be done 
 
 Client
 ------
+
+The client is intended to be invoked as a CLI script. First, you will need to install it.
+Use your favorite package manager. I use uv.
+
+.. code-block :: bash
+
+    uv tool install cubething/psync-client
+
+Then, you should be able to access it from the command line.
+
+.. code-block :: bash
+
+    psync-client --help
+
+Refer to the help command and the :doc:`api docs <./generated/client.main>` for
+more details.
