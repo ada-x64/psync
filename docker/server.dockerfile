@@ -22,4 +22,4 @@ VOLUME ["/app/rsync"]
 RUN uv sync --locked
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["./docker/run-server.sh"]
+CMD ["uv", "run", "psync-server"]

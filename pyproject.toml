@@ -1,6 +1,6 @@
 [project]
 name = "cubething_psync"
-version = "0.1.0.dev8"
+version = "0.1.0.dev9"
 description = "Simple project synchronization tool."
 authors = [{name = "ada mandala", email="ada@cubething.dev"}]
 readme = "README.md"
