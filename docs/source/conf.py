@@ -2,7 +2,7 @@
 
 # -- Project information
 
-project = "psync"
+project = "cubething_psync"
 copyright = "2025, ada mandala"
 author = "ada mandala"
 

@@ -1,13 +1,13 @@
 [project]
-name = "psync"
-version = "0.1.0"
+name = "cubething_psync"
+version = "0.1.0.dev2"
 description = "Simple project synchronization tool."
 authors = [{name = "ada mandala", email="ada@cubething.dev"}]
 readme = "README.md"
 requires-python = ">=3.13"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Operating System :: Linux"
+    "Operating System :: Unix"
 ]
 license = "MIT"
 license-files = ["LICENSE"]
