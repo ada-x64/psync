@@ -27,5 +27,5 @@ build-backend = "setuptools.build_meta"
 where= ["src"]
 
 [project.scripts]
-psync_server = "server.main:main"
-psync_client = "client.main:main"
+psync-server = "server.main:main"
+psync-client = "client.main:main"

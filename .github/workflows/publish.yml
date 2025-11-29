@@ -15,23 +15,23 @@ on:
             - main
 
 jobs:
-    # pypi_publish:
-    #     runs-on: ubuntu-latest
-    #     environment: pypi
-    #     permissions:
-    #         id-token: write
-    #         contents: read
-    #     steps:
-    #         - name: Checkout
-    #           uses: actions/checkout@v5
-    #         - name: Install uv
-    #           uses: astral-sh/setup-uv@v7
-    #         - name: Install Python 3.13
-    #           run: uv python install 3.13
-    #         - name: Build
-    #           run: uv build
-    #         - name: Publish
-    #           run: uv publish
+    pypi_publish:
+        runs-on: ubuntu-latest
+        environment: pypi
+        permissions:
+            id-token: write
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+            - name: Install uv
+              uses: astral-sh/setup-uv@v7
+            - name: Install Python 3.13
+              run: uv python install 3.13
+            - name: Build
+              run: uv build
+            - name: Publish
+              run: uv publish
 
     docker_publish:
         runs-on: ubuntu-latest
