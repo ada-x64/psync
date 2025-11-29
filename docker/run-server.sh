@@ -1,4 +1,4 @@
 #!/bin/bash
 set -xe
-rsync --daemon
+rsync --daemon -vv --no-detach &
 uv run psync-server
