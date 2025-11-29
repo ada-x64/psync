@@ -1,4 +1,4 @@
-FROM astral/uv:python3.12-debian-slim
+FROM astral/uv:python3.12-bookworm-slim
 
 ADD . /app
 WORKDIR /app
