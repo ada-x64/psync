@@ -14,7 +14,10 @@ X11Forwarding yes
 PrintMotd no
 AcceptEnv LANG LC_*
 Subsystem sftp /usr/lib/openssh/sftp-server
+PermitRootLogin yes
 EOF
+
+RUN echo "root:root" | chpasswd
 
 EXPOSE 22
 VOLUME ["/app/rsync"]

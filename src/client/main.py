@@ -143,12 +143,13 @@ class PsyncClient:
 def __rsync(project_hash: str, args: Args):
     """Runs rsync."""
     user = f"{USER}@" if USER != "" else ""
-    url = f"ssh://{user}{SERVER_IP}:{SERVER_SSH_PORT}/{SERVER_DEST}/{project_hash}/"
+    url = f"{user}{SERVER_IP}:{SERVER_DEST}/{project_hash}/"
     rsync_args = [
         "rsync",
         "-avzr",
         "--progress",
         "--mkpath",
+        f"--port={str(SERVER_SSH_PORT)}",
         args.target_path,
         *args.extra,
         url,

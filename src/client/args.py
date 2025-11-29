@@ -29,7 +29,7 @@ PSYNC_SERVER_IP   | 127.0.0.1
 PSYNC_SERVER_PORT | 5000
 PSYNC_SSH_PORT    | 5022
 PSYNC_SERVER_DEST | /app/rsync/
-PSYNC_SSH_USER    | <unset>
+PSYNC_SSH_USER    | root
 PSYNC_CERT_PATH   | ~/.local/share/psync/cert.pem
 """,
 )
