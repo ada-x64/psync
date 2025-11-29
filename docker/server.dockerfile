@@ -16,6 +16,6 @@ RUN uv sync --locked
 ENV PATH="/app/.venv/bin:$PATH"
 RUN mkdir -p /run/sshd /app/rsync \
     && chmod 755 /run/sshd /app/rsync \
-    && chown root:root /run/sshd \
+    && chown root:root /run/sshd
 
 CMD ["bash", "-c", "cp /app/authorized_keys.src /app/authorized_keys; /usr/sbin/sshd -D -e & uv run psync-server;"]
