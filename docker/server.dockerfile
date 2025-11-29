@@ -11,6 +11,7 @@ VOLUME ["/app/rsync"]
 COPY <<EOF /etc/rsyncd.conf
 [psync]
 path=/app/rsync
+write only=true
 EOF
 
 RUN uv sync --locked

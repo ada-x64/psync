@@ -146,7 +146,7 @@ def __rsync(args: Args):
     else:
         user = ""
     project_hash = hashlib.blake2s(os.getcwd().encode(), digest_size=8).hexdigest()
-    url = f"rsync://{user}{SERVER_IP}:{SERVER_RSYNC_PORT}/{project_hash}"
+    url = f"rsync://{user}{SERVER_IP}:{SERVER_RSYNC_PORT}/psync/{project_hash}"
     rsync_args = [
         "rsync",
         "-avzr",
