@@ -18,5 +18,6 @@ EOF
 
 RUN uv sync --locked
 ENV PATH="/app/.venv/bin:$PATH"
+RUN mkdir /run/sshd && chmod 755 /run/sshd && chown root:root /run/sshd
 
-CMD ["bash", "-c", "sshd -D -e & uv run psync-server;"]
+CMD ["bash", "-c", "/usr/sbin/sshd -D -e & uv run psync-server;"]
