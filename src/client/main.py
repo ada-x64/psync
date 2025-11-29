@@ -21,7 +21,15 @@ from common.data import (
 )
 import logging
 from common.log import InterceptHandler
-from client.args import SERVER_IP, SERVER_PORT, USER, SSL_CERT_PATH, Args, parse_args
+from client.args import (
+    SERVER_IP,
+    SERVER_PORT,
+    SERVER_RSYNC_PORT,
+    USER,
+    SSL_CERT_PATH,
+    Args,
+    parse_args,
+)
 
 
 class PsyncClient:
@@ -49,6 +57,8 @@ class PsyncClient:
             Default: 127.0.0.1
         PSYNC_SERVER_PORT: The port of the server instance.
             Default: 5000
+        PSYNC_SERVER_RSYNC_PORT: The server instance's rsync port.
+            Default: 5001
         PSYNC_SSH_USER: The SSH user for rsync.
             Default: Unset. Will use the default ssh user.
         PSYNC_CERT_PATH: Path to the SSL certificate. Used to trust self-signed certs. Should
@@ -134,7 +144,7 @@ def __rsync(args: Args):
         user = f"{USER}@"
     else:
         user = ""
-    url = f"{user}{SERVER_IP}:{args.dest_path}"
+    url = f"rsync://{user}{SERVER_IP}:{SERVER_RSYNC_PORT}/{hash}"
     rsync_args = [
         "rsync",
         "-avzr",

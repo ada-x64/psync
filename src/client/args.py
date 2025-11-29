@@ -42,6 +42,7 @@ _action = parser.add_argument(
 
 SERVER_IP: str = os.environ.get("PSYNC_SERVER_IP", "127.0.0.1")
 SERVER_PORT: int = int(os.environ.get("PSYNC_SERVER_PORT", "5000"))
+SERVER_RSYNC_PORT: int = int(os.environ.get("PSYNC_SERVER_RSYNC_PORT", "5001"))
 USER: str = os.environ.get("PSYNC_SSH_USER", "")
 SSL_CERT_PATH: str = os.environ.get("PSYNC_CERT_PATH", "~/.local/share/psync/cert.pem")
 
@@ -54,9 +55,6 @@ def parse_args() -> Args:
     if not target_path.is_file():
         logging.error(f"Could not file at {target_path}")
         exit(1)
-
-    val_hash = hash(os.getcwd())
-    dest_path = f"~/.local/share/psync/{val_hash}/"
 
     extra: list[str] = []
     extra_raw = args.get("extra")
@@ -75,7 +73,7 @@ def parse_args() -> Args:
 
     return Args(
         target_path=str(target_path),
-        dest_path=dest_path,
+        dest_path="/rsync/",
         extra=extra or [],
         env=env,
         args=client_args,
