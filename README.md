@@ -1,5 +1,5 @@
 <div align="center">
-<img src="./doc/static/logo.png" height=250 />
+<img src="./docs/static/logo.png" height=250 />
 </div>
 
 **psync** is a simple tool to sync your project over SSH. It consists of a

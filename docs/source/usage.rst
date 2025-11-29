@@ -31,6 +31,8 @@ systemd service.
 First, create a directory for your docker-compose file, for example at
 ``/opt/psync``.
 
+You can configure it like this:
+
 .. code-block:: yaml
 
     ---
@@ -42,6 +44,9 @@ First, create a directory for your docker-compose file, for example at
                 - "5000:5000"
             environment:
                 - PSYNC_ORIGINS=my-client-ip
+            volumes:
+                - /path/to/my/cert:/app/cert.pem:r
+                - /path/to/my/key:/app/key.pem:r
 
 Refer to the :doc:`server documentation <generated/server.main>` for environment
 configuration.
