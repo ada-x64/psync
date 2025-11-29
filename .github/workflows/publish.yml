@@ -1,5 +1,9 @@
 name: Build and publish to pypi and ghcr
 
+permissions:
+    contents: read
+    packages: write
+
 on:
     # publish on releases, e.g. v2.1.13 (image tagged as "2.1.13" - "v" prefix is removed)
     release:
@@ -31,23 +35,21 @@ jobs:
 
     docker_publish:
         runs-on: ubuntu-latest
-        permissions:
-            contents: read
-            packages: write
         steps:
             - uses: actions/checkout@v2
 
-            # https://github.com/marketplace/actions/push-to-ghcr
-            - name: Publish client to ghcr
-              uses: macbre/push-to-ghcr@master
+            - name: Build and push client
+              uses: docker/build-push-action@v5
               with:
-                  image_name: cubething/psync-client
-                  github_token: ${{ secrets.GITHUB_TOKEN }}
-                  dockerfile: ./client.dockerfile
+                  context: .
+                  file: ./client.dockerfile
+                  push: true
+                  tags: ghcr.io/${{ github.repository_owner }}/psync-client:latest
 
-            - name: Publish server to ghcr
-              uses: macbre/push-to-ghcr@master
+            - name: Build and push server
+              uses: docker/build-push-action@v5
               with:
-                  image_name: cubething/psync-client
-                  github_token: ${{ secrets.GITHUB_TOKEN }}
-                  dockerfile: ./server.dockerfile
+                  context: .
+                  file: ./client.dockerfile
+                  push: true
+                  tags: ghcr.io/${{ github.repository_owner }}/psync-client:latest
