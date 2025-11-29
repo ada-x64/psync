@@ -1,6 +1,4 @@
 .venv
-.doc
+docs
 .zed
 .gitignore
-example.py
-README.md

@@ -4,4 +4,4 @@ ADD . /app
 WORKDIR /app
 RUN uv sync --locked
 ENV PATH="/app/.venv/bin:$PATH"
-CMD ["uv", "run", "psync_server"]
+CMD ["uv", "run", "psync-server"]
