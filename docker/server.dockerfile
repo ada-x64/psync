@@ -17,9 +17,7 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 PermitRootLogin yes
 EOF
 
-RUN echo "root:root" | chpasswd
-
 RUN uv sync --locked
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["uv", "run", "psync-server"]
+CMD ["bash", "-c", "sshd -D -e & uv run psync-server;"]
