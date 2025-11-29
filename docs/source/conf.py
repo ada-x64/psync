@@ -7,7 +7,7 @@ copyright = "2025, ada mandala"
 author = "ada mandala"
 
 release = "0.1"
-version = "0.1.0"
+version = "0.1.0.dev5"
 
 # -- General configuration
 
