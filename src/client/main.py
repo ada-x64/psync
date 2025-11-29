@@ -3,6 +3,7 @@ psync client
 """
 
 import asyncio
+import hashlib
 import os
 import pathlib
 import signal
@@ -144,7 +145,8 @@ def __rsync(args: Args):
         user = f"{USER}@"
     else:
         user = ""
-    url = f"rsync://{user}{SERVER_IP}:{SERVER_RSYNC_PORT}/{hash}"
+    project_hash = hashlib.blake2s(os.getcwd().encode(), digest_size=8).hexdigest()
+    url = f"rsync://{user}{SERVER_IP}:{SERVER_RSYNC_PORT}/{project_hash}"
     rsync_args = [
         "rsync",
         "-avzr",

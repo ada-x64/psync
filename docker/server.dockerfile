@@ -5,12 +5,15 @@ WORKDIR /app
 
 RUN apt update && apt install -y rsync
 
+EXPOSE 22 873
+VOLUME ["/app/rsync"]
+
 COPY <<EOF /etc/rsyncd.conf
-    [psync]
-    path=/app/rsync
+[psync]
+path=/app/rsync
 EOF
 
-RUN rsync --daemon
 RUN uv sync --locked
 ENV PATH="/app/.venv/bin:$PATH"
-CMD ["uv", "run", "psync-server"]
+
+CMD ["./docker/run-server.sh"]
