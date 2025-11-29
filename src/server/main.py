@@ -34,12 +34,6 @@ import logging
 from common.log import InterceptHandler
 
 
-def __get_host(ws: ServerConnection) -> str:
-    addrs: tuple[str, str] = ws.remote_address  # pyright: ignore[reportAny]
-    (host, _port) = addrs
-    return host
-
-
 SSL_CERT_PATH: str = environ.get("SSL_CERT_PATH", "./cert.pem")
 SSL_KEY_PATH: str = environ.get("SSL_KEY_PATH", "./key.pem")
 PSYNC_HOST: str = environ.get("PSYNC_SERVER_IP", "0.0.0.0")
@@ -88,6 +82,11 @@ class PsyncServer:
     __coroutine: Task[None] | None = None
     """The main coroutine for this server."""
 
+    def __get_host(self, ws: ServerConnection) -> str:
+        addrs: tuple[str, str] = ws.remote_address  # pyright: ignore[reportAny]
+        (host, _port) = addrs
+        return host
+
     async def serve(self) -> None:
         """
         The main interface for the server. Will serve forever, or until exited with SIGINT/Ctrl-C.
@@ -124,7 +123,7 @@ class PsyncServer:
         return inner
 
     async def __end_session(self, ws: ServerConnection):
-        host = __get_host(ws)
+        host = self.__get_host(ws)
         try:
             _ = self.__sessions.pop(host)
         except Exception:
@@ -179,7 +178,7 @@ class PsyncServer:
         return inner
 
     async def __open(self, req: OpenReq, ws: ServerConnection):
-        host = __get_host(ws)
+        host = self.__get_host(ws)
         if self.__sessions.get(host) is not None:
             self.__sessions[host]
             resp = ErrorResp(msg="Process already open for this client.")
@@ -228,7 +227,7 @@ class PsyncServer:
             pass
 
     async def __kill(self, _req: KillReq, ws: ServerConnection):
-        host = __get_host(ws)
+        host = self.__get_host(ws)
         p = self.__sessions.get(host)
         task = self.__tasks.get(host)
         if p is not None and task is not None:

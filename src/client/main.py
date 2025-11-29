@@ -87,7 +87,6 @@ class PsyncClient:
         ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_ctx.load_verify_locations(pathlib.Path(SSL_CERT_PATH).expanduser())
         ssl_ctx.check_hostname = False  # not ideal
-        print(ssl_ctx.get_ca_certs())
         async with websockets.connect(
             f"wss://{SERVER_IP}:{SERVER_PORT}", ssl=ssl_ctx
         ) as ws:
