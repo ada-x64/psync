@@ -19,9 +19,6 @@ EOF
 
 RUN echo "root:root" | chpasswd
 
-EXPOSE 22
-VOLUME ["/app/rsync"]
-
 RUN uv sync --locked
 ENV PATH="/app/.venv/bin:$PATH"
 
