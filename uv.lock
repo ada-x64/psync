@@ -27,7 +27,7 @@ wheels = [
 
 [[package]]
 name = "cubething-psync"
-version = "0.1.0.dev2"
+version = "0.1.0.dev3"
 source = { editable = "." }
 dependencies = [
     { name = "build" },

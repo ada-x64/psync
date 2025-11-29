@@ -38,7 +38,7 @@ You can configure it like this:
     ---
     services:
         psync-server:
-            image: ghcr.io:ada-x64/psync-server
+            image: ghcr.io/ada-x64/psync-server
             container_name: psync-server
             ports:
                 - "5000:5000"
@@ -89,7 +89,7 @@ Use your favorite package manager. I use uv.
 
 .. code-block :: bash
 
-    uv tool install cubething/psync-client
+    uv tool install cubething_psync
 
 Then, you should be able to access it from the command line.
 

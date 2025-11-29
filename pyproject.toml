@@ -1,6 +1,6 @@
 [project]
 name = "cubething_psync"
-version = "0.1.0.dev2"
+version = "0.1.0.dev3"
 description = "Simple project synchronization tool."
 authors = [{name = "ada mandala", email="ada@cubething.dev"}]
 readme = "README.md"
@@ -27,5 +27,5 @@ build-backend = "setuptools.build_meta"
 where= ["src"]
 
 [project.scripts]
-server = "server.main:main"
-client = "client.main:main"
+psync_server = "server.main:main"
+psync_client = "client.main:main"
