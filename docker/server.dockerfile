@@ -8,10 +8,6 @@ RUN apt update && apt install -y rsync ssh
 COPY <<EOF /etc/ssh/sshd_config
 AuthorizedKeysFile /app/authorized_keys
 PasswordAuthentication no
-KbdInteractiveAuthentication no
-X11Forwarding yes
-PrintMotd no
-AcceptEnv LANG LC_*
 Subsystem sftp /usr/lib/openssh/sftp-server
 PermitRootLogin yes
 EOF
