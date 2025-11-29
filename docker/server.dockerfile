@@ -4,7 +4,7 @@ ADD . /app
 WORKDIR /app
 
 RUN apt update && apt install -y rsync ssh
-RUN service start ssh
+RUN service ssh start
 
 COPY <<EOF /etc/ssh/sshd_config
 AuthorizedKeysFile /app/authorized_keys
