@@ -3,6 +3,7 @@
 </div>
 
 [![readthedocs](https://app.readthedocs.org/projects/psync/badge/?version=latest)](https://psync.readthedocs.io/en/latest)
+[![PyPI - Version](https://img.shields.io/pypi/v/cubething_psync)](https://pypi.org/project/cubething_psync)
 
 **psync** is a simple tool to sync your project over SSH. It consists of a
 client and server.
