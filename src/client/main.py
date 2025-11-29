@@ -25,9 +25,10 @@ from common.log import InterceptHandler
 from client.args import (
     SERVER_IP,
     SERVER_PORT,
-    SERVER_RSYNC_PORT,
+    SERVER_SSH_PORT,
     USER,
     SSL_CERT_PATH,
+    SERVER_DEST,
     Args,
     parse_args,
 )
@@ -58,9 +59,9 @@ class PsyncClient:
             Default: 127.0.0.1
         PSYNC_SERVER_PORT: The port of the server instance.
             Default: 5000
-        PSYNC_SERVER_RSYNC_PORT: The server instance's rsync port.
+        PSYNC_SSH_PORT: The server instance's SSH port.
             Default: 5001
-        PSYNC_SSH_USER: The SSH user for rsync.
+        PSYNC_SSH_USER: The server instance's SSH user.
             Default: Unset. Will use the default ssh user.
         PSYNC_CERT_PATH: Path to the SSL certificate. Used to trust self-signed certs. Should
             match the server's certificate.
@@ -139,14 +140,10 @@ class PsyncClient:
                         logging.warning(f"Got unknown request {resp}")
 
 
-def __rsync(args: Args):
+def __rsync(project_hash: str, args: Args):
     """Runs rsync."""
-    if USER != "":
-        user = f"{USER}@"
-    else:
-        user = ""
-    project_hash = hashlib.blake2s(os.getcwd().encode(), digest_size=8).hexdigest()
-    url = f"rsync://{user}{SERVER_IP}:{SERVER_RSYNC_PORT}/psync/{project_hash}"
+    user = f"{USER}@" if USER != "" else ""
+    url = f"ssh://{user}{SERVER_IP}:{SERVER_SSH_PORT}/{SERVER_DEST}/{project_hash}/"
     rsync_args = [
         "rsync",
         "-avzr",
@@ -171,11 +168,14 @@ def main():
     log_level = os.environ.get("PSYNC_LOG", "INFO").upper()
     logging.basicConfig(handlers=[InterceptHandler()], level=log_level, force=True)
 
+    project_hash = hashlib.blake2s(os.getcwd().encode(), digest_size=8).hexdigest()
     args = parse_args()
-    __rsync(args)
+    __rsync(project_hash, args)
 
-    client_path = pathlib.Path(f"{args.dest_path}/{os.path.basename(args.target_path)}")
-    client = PsyncClient(args=args.args, env=args.env, path=client_path)
+    dest_path = pathlib.Path(
+        f"{SERVER_DEST}/{project_hash}/{os.path.basename(args.target_path)}"
+    )
+    client = PsyncClient(args=args.args, env=args.env, path=dest_path)
     asyncio.run(client.run())
 
 
