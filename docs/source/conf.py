@@ -29,6 +29,12 @@ templates_path = ["_templates"]
 
 autosummary_generate = True
 
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "private-members": False,
+}
+
 # -- Options for HTML output
 
 html_theme = "furo"
