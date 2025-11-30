@@ -1,21 +1,25 @@
 FROM astral/uv:python3.12-bookworm-slim
 
+RUN useradd -ms /bin/bash psync && passwd -d psync
+USER psync
 ADD . /app
 WORKDIR /app
+
+USER root
 
 RUN apt update && apt install -y rsync ssh
 
 COPY <<EOF /etc/ssh/sshd_config
-AuthorizedKeysFile /app/authorized_keys
 PasswordAuthentication no
 Subsystem sftp /usr/lib/openssh/sftp-server
-PermitRootLogin yes
+Port 5022
 EOF
+RUN mkdir -p /run/sshd \
+    && chmod 755 /run/sshd \
+    && chown root:root /run/sshd
 
 RUN uv sync --locked
 ENV PATH="/app/.venv/bin:$PATH"
-RUN mkdir -p /run/sshd /app/rsync \
-    && chmod 755 /run/sshd /app/rsync \
-    && chown root:root /run/sshd
 
-CMD ["bash", "-c", "cp /app/authorized_keys.src /app/authorized_keys; /usr/sbin/sshd -D -e & uv run psync-server;"]
+USER root
+CMD ["docker/run-server.sh"]

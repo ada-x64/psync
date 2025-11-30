@@ -62,7 +62,7 @@ class PsyncClient:
         PSYNC_SSH_PORT: The server instance's SSH port.
             Default: 5001
         PSYNC_SSH_USER: The server instance's SSH user.
-            Default: Unset. Will use the default ssh user.
+            Default: psync
         PSYNC_CERT_PATH: Path to the SSL certificate. Used to trust self-signed certs. Should
             match the server's certificate.
             Default: ~/.local/share/psync/cert.pem
@@ -142,14 +142,14 @@ class PsyncClient:
 
 def __rsync(project_hash: str, args: Args):
     """Runs rsync."""
-    user = f"{USER}@" if USER != "" else ""
-    url = f"{user}{SERVER_IP}:{SERVER_DEST}/{project_hash}/"
+    url = f"{SERVER_IP}:{SERVER_DEST}/{project_hash}/"
     rsync_args = [
         "rsync",
         "-avzr",
+        "-e",
+        f"/usr/bin/ssh -l {USER} -p {str(SERVER_SSH_PORT)}",
         "--progress",
         "--mkpath",
-        f"--port={str(SERVER_SSH_PORT)}",
         args.target_path,
         *args.extra,
         url,

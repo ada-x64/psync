@@ -28,8 +28,8 @@ Variable          | Default
 PSYNC_SERVER_IP   | 127.0.0.1
 PSYNC_SERVER_PORT | 5000
 PSYNC_SSH_PORT    | 5022
-PSYNC_SERVER_DEST | /app/rsync/
-PSYNC_SSH_USER    | root
+PSYNC_SERVER_DEST | /home/psync/
+PSYNC_SSH_USER    | psync
 PSYNC_CERT_PATH   | ~/.local/share/psync/cert.pem
 """,
 )
@@ -57,8 +57,8 @@ _action = parser.add_argument(
 SERVER_IP: str = os.environ.get("PSYNC_SERVER_IP", "127.0.0.1")
 SERVER_PORT: int = int(os.environ.get("PSYNC_SERVER_PORT", "5000"))
 SERVER_SSH_PORT: int = int(os.environ.get("PSYNC_SSH_PORT", "5022"))
-SERVER_DEST: str = os.environ.get("PSYNC_SERVER_DEST", "/app/rsync")
-USER: str = os.environ.get("PSYNC_SSH_USER", "")
+SERVER_DEST: str = os.environ.get("PSYNC_SERVER_DEST", "/home/psync")
+USER: str = os.environ.get("PSYNC_SSH_USER", "psync")
 SSL_CERT_PATH: str = os.environ.get("PSYNC_CERT_PATH", "~/.local/share/psync/cert.pem")
 
 

@@ -6,6 +6,8 @@ import asyncio
 from asyncio.subprocess import Process
 from asyncio.tasks import Task
 from collections.abc import Awaitable
+import functools
+import operator
 from os import environ
 from os.path import basename
 import pathlib
@@ -187,8 +189,11 @@ class PsyncServer:
             path = pathlib.Path.expanduser(req.path).resolve()
             args = [str(path), *req.args]
             env = {"PYTHONUNBUFFERED": "1", **req.env}
+            reduced: str = functools.reduce(
+                operator.add, map(lambda x: (f"{x[0]}={x[1]}"), env.items())
+            )
             logging.info(
-                f"Running `{map(lambda x: (f'{x[0]}={x[1]}'), env.items())} [...]/{basename(args[0])} {' '.join(args[1:])}`"
+                f"Running `{reduced} [...]/{basename(args[0])} {' '.join(args[1:])}`"
             )
             try:
                 p = await asyncio.create_subprocess_exec(
