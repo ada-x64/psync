@@ -148,5 +148,7 @@ more details.
 
 **You will need to manually add a certificate to trust the server.** Copy the
 certificate you generated for the server to your client machine at
-`~/.local/share/psync`. (If you want to use a different directory, set it using
-the `PSYNC_CERT_PATH` environment variable.)
+``~/.local/share/psync``. (If you want to use a different directory, set it using
+the ``PSYNC_CERT_PATH`` environment variable.)
+
+I also recommend placing your ``PSYNC_CLIENT_IP`` in ``~/.profile``.

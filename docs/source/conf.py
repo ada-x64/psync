@@ -6,8 +6,8 @@ project = "cubething_psync"
 copyright = "2025, ada mandala"
 author = "ada mandala"
 
-release = "0.1"
-version = "0.1.0.dev5"
+release = "0.2"
+version = "0.2"
 
 # -- General configuration
 
