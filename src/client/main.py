@@ -40,12 +40,6 @@ class PsyncClient:
     rsync, then execute them remotely while receiving the logs.
 
     CLI arguments: ::
-
-        usage: psync-client [-h] --path PATH [--extra EXTRA [EXTRA ...]] [--env ENV] [--args ARGS]
-
-        Client for the psync server.
-
-        options:
           -h, --help            show this help message and exit
           --path, -p PATH       Path to the target exectuable.
           --extra, -E EXTRA [EXTRA ...]
@@ -60,7 +54,7 @@ class PsyncClient:
         PSYNC_SERVER_PORT: The port of the server instance.
             Default: 5000
         PSYNC_SSH_PORT: The server instance's SSH port.
-            Default: 5001
+            Default: 5022
         PSYNC_SSH_USER: The server instance's SSH user.
             Default: psync
         PSYNC_CERT_PATH: Path to the SSL certificate. Used to trust self-signed certs. Should
