@@ -1,7 +1,5 @@
 FROM astral/uv:debian-slim
 
-RUN useradd -ms /bin/bash psync && passwd -d psync
-USER psync
 ADD . /app
 WORKDIR /app
 
@@ -18,8 +16,11 @@ RUN mkdir -p /run/sshd \
     && chmod 755 /run/sshd \
     && chown root:root /run/sshd
 
-RUN uv sync --locked
-ENV PATH="/app/.venv/bin:$PATH"
+RUN useradd -ms /bin/bash psync && passwd -d psync
+RUN chown psync:psync /app -R
 
 USER psync
+RUN uv sync --locked
+
+USER root
 CMD ["docker/run-server.sh"]

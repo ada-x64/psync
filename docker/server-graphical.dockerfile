@@ -1,8 +1,10 @@
-FROM ghcr.io/ada-x64/psync-server
+FROM astral/uv:debian-slim
+
+ADD . /app
+WORKDIR /app
 
 USER root
 
-# Install psync deps and bevy deps as basic setup
 RUN apt update && apt install -y \
     rsync ssh \
     g++ \
@@ -14,10 +16,24 @@ RUN apt update && apt install -y \
     libwayland-dev \
     libxkbcommon-dev \
     libwayland-client0 \
-    libasound2-dev
+    libasound2-dev \
+    mesa-utils \
+    mesa-utils-extra
 
-RUN uv sync --locked
-ENV PATH="/app/.venv/bin:$PATH"
+COPY <<EOF /etc/ssh/sshd_config
+PasswordAuthentication no
+Subsystem sftp /usr/lib/openssh/sftp-server
+Port 5022
+EOF
+RUN mkdir -p /run/sshd \
+    && chmod 755 /run/sshd \
+    && chown root:root /run/sshd
+
+RUN useradd -ms /bin/bash psync && passwd -d psync
+RUN chown psync:psync /app -R
 
 USER psync
+RUN uv sync --locked
+
+USER root
 CMD ["docker/run-server.sh", "-E"]
