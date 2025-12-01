@@ -1,4 +1,4 @@
-FROM astral/uv:python3.12-bookworm-slim
+FROM astral/uv:debian-slim
 
 RUN useradd -ms /bin/bash psync && passwd -d psync
 USER psync
