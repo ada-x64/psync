@@ -65,3 +65,11 @@ jobs:
                   file: ./docker/server.dockerfile
                   push: true
                   tags: ghcr.io/${{ github.repository_owner }}/psync-server:latest
+
+            - name: Build and push graphical server
+              uses: docker/build-push-action@v5
+              with:
+                  context: .
+                  file: ./docker/server-graphical.dockerfile
+                  push: true
+                  tags: ghcr.io/${{ github.repository_owner }}/psync-graphical-server:latest
