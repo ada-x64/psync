@@ -121,7 +121,7 @@ class PsyncClient:
                     case LogResp():
                         print(resp.msg, end="")
                     case ErrorResp():
-                        logging.error(resp.msg)
+                        logging.error(f"Received server error: {resp.msg}")
                         await ws.close()
                         exit(1)
                     case ExitResp():

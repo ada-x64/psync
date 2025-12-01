@@ -12,10 +12,12 @@ RUN apt update && apt install -y \
     libudev-dev \
     libxkbcommon-x11-0 \
     libwayland-dev \
-    libxkbcommon-dev
+    libxkbcommon-dev \
+    libwayland-client0 \
+    libasound2-dev
 
 RUN uv sync --locked
 ENV PATH="/app/.venv/bin:$PATH"
 
-USER root
-CMD ["docker/run-server.sh"]
+USER psync
+CMD ["docker/run-server.sh", "-E"]

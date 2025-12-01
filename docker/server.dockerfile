@@ -21,5 +21,5 @@ RUN mkdir -p /run/sshd \
 RUN uv sync --locked
 ENV PATH="/app/.venv/bin:$PATH"
 
-USER root
+USER psync
 CMD ["docker/run-server.sh"]
