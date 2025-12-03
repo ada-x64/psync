@@ -26,6 +26,17 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where= ["src"]
 
+[dependency-groups]
+dev = [
+    "pytest>=9.0.1",
+    "ruff>=0.14.7",
+    "testcontainers>=4.13.3",
+]
+
 [project.scripts]
 psync-server = "server.main:main"
 psync-client = "client.main:main"
+
+[pytest]
+testpaths="test"
+addopts = ["--import-mode=importlib"]
