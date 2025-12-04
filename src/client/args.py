@@ -1,5 +1,5 @@
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import logging
 import os
 from pathlib import Path
@@ -10,10 +10,15 @@ from common.data import deserialize_env
 @dataclass
 class Args:
     target_path: str
-    extra: list[str]
-    env: dict[str, str]
-    args: list[str]
-
+    extra: list[str] = field(default_factory=list)
+    env: dict[str, str]= field(default_factory=dict)
+    args: list[str]= field(default_factory=list)
+    server_ip: str = os.environ.get("PSYNC_SERVER_IP", "127.0.0.1")
+    server_port: int = int(os.environ.get("PSYNC_SERVER_PORT", "5000"))
+    server_ssh_port: int = int(os.environ.get("PSYNC_SSH_PORT", "5022"))
+    server_dest: str = os.environ.get("PSYNC_SERVER_DEST", "/home/psync")
+    ssh_args: str = os.environ.get("PSYNC_SSH_ARGS", "-l psync")
+    ssl_cert_path: str = os.environ.get("PSYNC_CERT_PATH", "~/.local/share/psync/cert.pem")
 
 parser = argparse.ArgumentParser(
     prog="psync-client",
@@ -29,8 +34,10 @@ PSYNC_SERVER_IP   | 127.0.0.1
 PSYNC_SERVER_PORT | 5000
 PSYNC_SSH_PORT    | 5022
 PSYNC_SERVER_DEST | /home/psync/
-PSYNC_SSH_USER    | psync
+PSYNC_SSH_ARGS    | -l psync
 PSYNC_CERT_PATH   | ~/.local/share/psync/cert.pem
+
+SSH arguments will be append with "-p {PSYNC_SSH_PORT}"
 """,
 )
 _action = parser.add_argument(
@@ -53,13 +60,6 @@ _action = parser.add_argument(
 _action = parser.add_argument(
     "--args", "-a", help="Arguments with which to run the remote executable."
 )
-
-SERVER_IP: str = os.environ.get("PSYNC_SERVER_IP", "127.0.0.1")
-SERVER_PORT: int = int(os.environ.get("PSYNC_SERVER_PORT", "5000"))
-SERVER_SSH_PORT: int = int(os.environ.get("PSYNC_SSH_PORT", "5022"))
-SERVER_DEST: str = os.environ.get("PSYNC_SERVER_DEST", "/home/psync")
-USER: str = os.environ.get("PSYNC_SSH_USER", "psync")
-SSL_CERT_PATH: str = os.environ.get("PSYNC_CERT_PATH", "~/.local/share/psync/cert.pem")
 
 
 def parse_args() -> Args:

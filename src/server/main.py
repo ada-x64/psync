@@ -136,6 +136,7 @@ class PsyncServer:
             await ws.close()
             _ = self.__coroutine.cancel()  # pyright: ignore[reportOptionalMemberAccess]
             asyncio.get_event_loop().stop()
+            process.exit(130)
 
         return lambda: asyncio.create_task(inner())
 
