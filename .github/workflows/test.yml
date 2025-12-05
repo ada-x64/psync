@@ -30,7 +30,7 @@ jobs:
         uses: docker/setup-compose-action@v1
 
       - name: Generate SSH key
-        run: ssh-keygen -N -f ./test/assets/ssh-key
+        run: ssh-keygen -N '' -f ./test/assets/ssh-key
 
       - name: Generate SSL key
         run:
