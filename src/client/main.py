@@ -3,10 +3,7 @@ psync client
 """
 
 import asyncio
-import hashlib
 import os
-from os.path import basename
-import pathlib
 from pathlib import Path
 import signal
 import ssl
@@ -34,38 +31,14 @@ class PsyncClient:
     """
     The primary interface for psync. The client CLI allows users to sync files with
     rsync, then execute them remotely while receiving the logs.
-
-    CLI arguments: ::
-          -h, --help            show this help message and exit
-          --path, -p PATH       Path to the target exectuable.
-          --extra, -E EXTRA [EXTRA ...]
-                                Extra files or directories to be synced to the destination path.
-          --env, -e ENV         Environment variables to set in the remote execution environment. Variables
-                                must be space-sepated or double-quoted.
-          --args, -a ARGS       Arguments with which to run the remote executable.
-
-    Environment configuration:
-        PSYNC_SERVER_IP: The IP address of the server instance.
-            Default: 127.0.0.1
-        PSYNC_SERVER_PORT: The port of the server instance.
-            Default: 5000
-        PSYNC_SSH_PORT: The server instance's SSH port.
-            Default: 5022
-        PSYNC_SSH_ARGS
-            Default: -u psync
-        PSYNC_CERT_PATH: Path to the SSL certificate. Used to trust self-signed certs. Should
-            match the server's certificate.
-            Default: ~/.local/share/psync/cert.pem
     """
 
     args: Args
-    destination_path: Path
     __quit: bool = False
     __force_exit: bool = False
 
-    def __init__(self, args: Args, path_hash: str):
+    def __init__(self, args: Args):
         self.args = args
-        self.destination_path = Path(args.server_dest) / path_hash / basename(args.target_path)
 
     def __mk_handler(self, ws: websockets.ClientConnection):
         async def inner():
@@ -94,7 +67,13 @@ class PsyncClient:
                 signal.SIGINT, self.__mk_handler(ws)
             )
             await ws.send(
-                serialize(OpenReq(path=self.destination_path, env=self.args.env, args=self.args.args))
+                serialize(
+                    OpenReq(
+                        path=self.args.destination_path(),
+                        env=self.args.env,
+                        args=self.args.args,
+                    )
+                )
             )
             async for data in ws:
                 if isinstance(data, bytes):
@@ -128,9 +107,8 @@ class PsyncClient:
                         logging.warning(f"Got unknown request {resp}")
 
 
-def __rsync(project_hash: str, args: Args):
+def __rsync(args: Args):
     """Runs rsync."""
-    url = f"{args.server_ip}:{args.server_dest}/{project_hash}/"
     rsync_args = [
         "rsync",
         "-avzr",
@@ -139,8 +117,8 @@ def __rsync(project_hash: str, args: Args):
         "--progress",
         "--mkpath",
         args.target_path,
-        *args.extra,
-        url,
+        *args.assets,
+        args.rsync_url(),
     ]
     logging.info(" ".join(rsync_args))
     p = subprocess.run(rsync_args)
@@ -149,8 +127,6 @@ def __rsync(project_hash: str, args: Args):
         logging.error(msg)
         raise Exception(msg)
 
-def __get_hash() -> str:
-    return hashlib.blake2s(os.getcwd().encode(), digest_size=8).hexdigest()
 
 def main(args: Args | None = None):
     """
@@ -160,15 +136,10 @@ def main(args: Args | None = None):
     log_level = os.environ.get("PSYNC_LOG", "INFO").upper()
     logging.basicConfig(handlers=[InterceptHandler()], level=log_level, force=True)
 
-    project_hash=__get_hash()
-
     args = parse_args() if args is None else args
-    __rsync(project_hash, args)
+    __rsync(args)
 
-    dest_path = pathlib.Path(
-        f"{args.server_dest}/{project_hash}/{os.path.basename(args.target_path)}"
-    )
-    client = PsyncClient(args=args.args, env=args.env, path=dest_path)
+    client = PsyncClient(args)
     asyncio.run(client.run())
 
 

@@ -7,4 +7,6 @@ API
    :recursive:
 
    client.main
+   client.args
    server.main
+   server.args

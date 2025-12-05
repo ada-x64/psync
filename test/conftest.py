@@ -1,7 +1,6 @@
-import sys
 from loguru import logger
 import pytest
-from testcontainers.compose.compose import DockerCompose
+from testcontainers.compose.compose import DockerCompose  # pyright: ignore[reportMissingTypeStubs]
 import os
 from pathlib import Path
 import logging
@@ -13,6 +12,7 @@ root_path = Path(os.path.join(__file__, "..", "..")).resolve()
 log_level = os.environ.get("PSYNC_LOG", "DEBUG").upper()
 logging.basicConfig(handlers=[InterceptHandler()], level=log_level, force=True)
 logger.remove()
+
 
 @pytest.fixture(scope="session", autouse=True)
 def server(request: pytest.FixtureRequest):
