@@ -34,6 +34,7 @@ class OpenReq:
 
 @dataclass
 class KillReq:
+    pid: int
     kind: ReqKind = ReqKind.Kill
 
 
@@ -57,6 +58,7 @@ class ErrorResp:
 
 @dataclass
 class OkayResp:
+    pid: int
     kind: RespKind = RespKind.Okay
 
 
@@ -65,23 +67,24 @@ Resp = LogResp | ExitResp | ErrorResp | OkayResp
 
 
 def serialize(msg: Req | Resp) -> str:
+    value = msg.kind.value
     match msg:
         case OpenReq():
             args = " ".join(msg.args)
             env: list[str] = []
             for key, value in msg.env.items():
                 env.append(f'{key}="{value}"')
-            return f"open path='{msg.path}' args='{args}' env='{' '.join(env)}'"
+            return f"{value} path='{msg.path}' args='{args}' env='{' '.join(env)}'"
         case KillReq():
-            return "kill"
+            return f"{value} {msg.pid}"
         case LogResp():
-            return f"log {msg.msg}"
+            return f"{value} {msg.msg}"
         case ExitResp():
-            return f"exit {msg.exit_code}"
+            return f"{value} {msg.exit_code}"
         case ErrorResp():
-            return f"error {msg.msg}"
+            return f"{value} {msg.msg}"
         case OkayResp():
-            return "okay"
+            return f"{value} {msg.pid}"
 
 
 path_expr = re.compile(r"path='([^']+)'")
@@ -104,15 +107,7 @@ def deserialize_env(input: str) -> dict[str, str]:
 
 def deserialize(msg: str) -> Req | Resp:
     logging.debug(f"Got message {msg}")
-    try:
-        [kind, rest] = msg.split(" ", 1)
-    except Exception as e:
-        if msg == "okay":
-            return OkayResp()
-        elif msg == "kill":
-            return KillReq()
-        else:
-            raise e
+    [kind, rest] = msg.split(" ", 1)
 
     match kind:
         case ReqKind.Open.value:
@@ -134,12 +129,16 @@ def deserialize(msg: str) -> Req | Resp:
 
             return OpenReq(path=Path(path), args=args, env=env)
 
+        case ReqKind.Kill.value:
+            return KillReq(int(rest))
         case RespKind.Log.value:
-            return LogResp(msg=rest)
+            return LogResp(rest)
         case RespKind.Exit.value:
-            return ExitResp(exit_code=rest)
+            return ExitResp(rest)
         case RespKind.Error.value:
-            return ErrorResp(msg=rest)
+            return ErrorResp(rest)
+        case RespKind.Okay.value:
+            return OkayResp(int(rest))
 
         case _:
             raise ValueError("Could not match kind for message", msg)

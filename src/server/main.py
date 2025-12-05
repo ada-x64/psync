@@ -17,11 +17,10 @@ from typing import Callable
 from websockets import (
     ConnectionClosedError,
     ConnectionClosedOK,
-    Request,
-    Response,
     ServerConnection,
 )
 from websockets.asyncio.server import serve
+from websockets.typing import Origin
 from common.data import (
     ErrorResp,
     ExitResp,
@@ -59,10 +58,8 @@ class PsyncServer:
 
     args: Args
 
-    __tasks: dict[str, PTask] = {}
-    """Active sessions. A dict of IP addresses and the running log task. IP
-    addresses _must_ match those in origins."""
-
+    __tasks: dict[str, dict[int, PTask]] = {}
+    """{[host: str]: {[pid: str]: PTask} }"""
     __coroutine: Task[None] | None = None
     """The main coroutine for this server."""
 
@@ -91,8 +88,8 @@ class PsyncServer:
             (self.__handle()),
             self.args.host,
             int(self.args.port),
-            process_request=self.__process_request(),
             ssl=ssl_ctx,
+            origins=list(map(lambda x: Origin(f"wss://{x}"), self.args.origins)),
         )
         self.__coroutine = asyncio.create_task(server.serve_forever())
         try:
@@ -101,18 +98,6 @@ class PsyncServer:
             # 'event loop stopped before Future completed'
             logging.info(f"Got error {e}")
             pass
-
-    def __process_request(
-        self,
-    ) -> Callable[[ServerConnection, Request], Response | None]:
-        def inner(ws: ServerConnection, _req: Request) -> Response | None:
-            addrs: tuple[str, str] = ws.remote_address  # pyright: ignore[reportAny]
-            (host, port) = addrs
-            if host not in self.args.origins:
-                logging.info(f"Rejecting unknown request origin {host}:{port}")
-                return ws.respond(400, "Client address not recognized.")
-
-        return inner
 
     async def __end_session(self, ws: ServerConnection):
         host = self.__get_host(ws)
@@ -133,7 +118,7 @@ class PsyncServer:
                 raise SystemExit(130)
             else:
                 logging.warning("Second Ctrl-C detected, forcing shutdown.")
-                raise SystemExit(130)
+                raise SystemExit(1)
 
         return lambda: asyncio.create_task(inner())
 
@@ -174,14 +159,6 @@ class PsyncServer:
 
     async def __open(self, req: OpenReq, ws: ServerConnection):
         host = self.__get_host(ws)
-        if self.__tasks.get(host) is not None:
-            ptask = self.__tasks[host]
-            logging.warning(
-                f"Cancelling previous task for host {host} (PID {ptask.process.pid})"
-            )
-            ptask.process.kill()
-            _ = ptask.task.cancel()
-            _ = self.__tasks.pop(host)
         path = pathlib.Path.expanduser(req.path).resolve()
         args = [str(path), *req.args]
         env = req.env if not self.args.use_base_env else {**environ, **req.env}
@@ -202,12 +179,19 @@ class PsyncServer:
                 stderr=asyncio.subprocess.STDOUT,
                 user=self.args.user,
             )
-            self.__tasks[host] = PTask(asyncio.create_task(self.__log(ws, p)), p)
-            resp = OkayResp()
+            task = PTask(asyncio.create_task(self.__log(ws, p)), p)
+
+            if self.__tasks.get(host) is None:
+                self.__tasks[host] = {p.pid: task}
+            else:
+                self.__tasks[host][p.pid] = task
+
+            resp = OkayResp(pid=p.pid)
             await ws.send(serialize(resp))
+
         except Exception as e:
-            logging.error(f"Failed to run process with error {e}")
-            resp = ErrorResp(msg=f"Server error: {e}")
+            logging.error(f"Failed to start process `{args[0]}` with error {e}")
+            resp = ErrorResp(f"Server error: {e}")
             await ws.send(serialize(resp))
 
     async def __log(self, ws: ServerConnection, process: asyncio.subprocess.Process):
@@ -230,20 +214,23 @@ class PsyncServer:
         except (KeyError, ConnectionClosedError, ConnectionClosedOK):
             pass
 
-    async def __kill(self, _req: KillReq, ws: ServerConnection):
+    async def __kill(self, req: KillReq, ws: ServerConnection):
         host = self.__get_host(ws)
-        ptask = self.__tasks.get(host)
-        if ptask is None:
-            logging.error(
-                f"Tried to kill process for host {host}, but no process was running."
-            )
-            await ws.send(
-                serialize(
-                    ErrorResp(msg="Tried to kill process, but no process was running.")
-                )
-            )
+        tasks = self.__tasks.get(host)
+        if tasks is None:
+            msg = f"Tried to kill process for host {host}, but no process was running."
+            logging.error(msg)
+            await ws.send(serialize(ErrorResp(msg)))
             return
-        process = ptask.process
+
+        task = tasks.get(req.pid)
+        if task is None:
+            msg = f"Tried to kill process {req.pid}, but it was not found."
+            logging.error(msg)
+            await ws.send(serialize(ErrorResp(msg)))
+            return
+
+        process = task.process
         logging.info(f"Killing PID {process.pid}")
         process.kill()
         code = await process.wait()

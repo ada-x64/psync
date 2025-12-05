@@ -88,6 +88,14 @@ class Args:
     Public SSL certificate used to trust the psync server.
     """
 
+    client_origin: str = os.environ.get("PSYNC_CLIENT_ORIGIN", "127.0.0.1")
+    """
+    environ: ``PSYNC_CLIENT_ORIGIN``
+
+    Domain name. Should match the origins set in the server's ``PSYNC_ORIGINS``
+    variable.
+    """
+
     def project_hash(self) -> str:
         """
         Hash value generated from the target path. Used as the directory name for the project.
@@ -115,14 +123,15 @@ Client for the psync server.
 In addition to the options below, the client is configurable through environment
 variables.
 
-Variable          | Default
-------------------+-------------------------------
-PSYNC_SERVER_IP   | 127.0.0.1
-PSYNC_SERVER_PORT | 5000
-PSYNC_SSH_PORT    | 5022
-PSYNC_SERVER_DEST | /home/psync/
-PSYNC_SSH_ARGS    | -l psync
-PSYNC_CERT_PATH   | ~/.local/share/psync/cert.pem
+Variable            | Default
+--------------------+-------------------------------
+PSYNC_SERVER_IP     | 127.0.0.1
+PSYNC_SERVER_PORT   | 5000
+PSYNC_SSH_PORT      | 5022
+PSYNC_SERVER_DEST   | /home/psync/
+PSYNC_SSH_ARGS      | -l psync
+PSYNC_CERT_PATH     | ~/.local/share/psync/cert.pem
+PSYNC_CLIENT_ORIGIN | 127.0.0.1
 
 SSH arguments will be append with "-p {PSYNC_SSH_PORT}"
 """,

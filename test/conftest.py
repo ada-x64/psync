@@ -14,14 +14,15 @@ logging.basicConfig(handlers=[InterceptHandler()], level=log_level, force=True)
 logger.remove()
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 def server(request: pytest.FixtureRequest):
     """
     Creates the psync server from assets/server.docker-compose.yml
     """
     compose = DockerCompose(
         context=root_path.__str__(),
-        compose_file_name=[(assets_path / "server.docker-compose.yml").__str__()],
+        compose_file_name=[(assets_path / "docker-compose.yml").__str__()],
+        services=["psync-server"],
     )
 
     def cleanup():

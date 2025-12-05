@@ -52,7 +52,7 @@ class Args:
     """
     environ: ``PSYNC_ORIGINS``
 
-    Accepted client origins.
+    Accepted client origins. Should match the HTTP Origin header.
     """
     log_level: str = environ.get("PSYNC_LOG_LEVEL", "INFO").upper()
     """

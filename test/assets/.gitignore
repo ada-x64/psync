@@ -1,1 +1,4 @@
-!*.pem
+*.pem
+*.key
+ssh-key
+ssh-key.pub

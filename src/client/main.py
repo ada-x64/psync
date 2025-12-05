@@ -9,6 +9,7 @@ import signal
 import ssl
 import subprocess
 import websockets
+from websockets.typing import Origin
 from common.data import (
     ErrorResp,
     ExitResp,
@@ -34,7 +35,8 @@ class PsyncClient:
     """
 
     args: Args
-    __quit: bool = False
+    pid: int | None = None
+    """ID of the current connection."""
     __force_exit: bool = False
 
     def __init__(self, args: Args):
@@ -45,7 +47,8 @@ class PsyncClient:
             if not self.__force_exit:
                 logging.info("Gracefully shutting down...")
                 self.__force_exit = True
-                await ws.send(serialize(KillReq()))
+                if self.pid is not None:
+                    await ws.send(serialize(KillReq(pid=self.pid)))
                 await ws.close()
                 asyncio.get_event_loop().stop()
                 raise SystemExit(130)
@@ -62,7 +65,9 @@ class PsyncClient:
         ssl_ctx.load_verify_locations(Path(self.args.ssl_cert_path).expanduser())
         ssl_ctx.check_hostname = False  # not ideal
         async with websockets.connect(
-            f"wss://{self.args.server_ip}:{self.args.server_port}", ssl=ssl_ctx
+            f"wss://{self.args.server_ip}:{self.args.server_port}",
+            ssl=ssl_ctx,
+            origin=Origin(f"wss://{self.args.client_origin}"),
         ) as ws:
             asyncio.get_event_loop().add_signal_handler(
                 signal.SIGINT, self.__mk_handler(ws)
@@ -103,7 +108,8 @@ class PsyncClient:
                         await ws.close()
                         raise SystemExit(resp.exit_code)
                     case OkayResp():
-                        logging.info("Running exectuable...")
+                        logging.info(f"OK. Remote PID = {resp.pid}")
+                        self.pid = resp.pid
                     case _:
                         logging.warning(f"Got unknown request {resp}")
 
