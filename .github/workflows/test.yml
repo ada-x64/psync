@@ -34,9 +34,9 @@ jobs:
 
       - name: Generate SSL key
         run:
-          openssl req -x509 -newkey rsa:4096 -keyout ./test/assetss/key.pem -out ./test/assets/cert.pem \
-          | -sha256 -days 3650 -nodes -subj "/C=XX/ST=st/L=c/O=o/OU=ou/CN=127.0.0.1" \
-          | -addext "subjectAltName=IP:DNS:localhost,DNS:psync-server,IP:127.0.0.1"
+          openssl req -x509 -newkey rsa:4096 -keyout ./test/assets/key.pem -out ./test/assets/cert.pem
+          -sha256 -days 3650 -nodes -subj "/C=XX/ST=st/L=c/O=o/OU=ou/CN=127.0.0.1"
+          -addext "subjectAltName=DNS:localhost,DNS:psync-server,IP:127.0.0.1"
 
       - name: Run tests
         run: uv run pytest
