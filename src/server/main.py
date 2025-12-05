@@ -66,6 +66,8 @@ class PsyncServer:
     __coroutine: Task[None] | None = None
     """The main coroutine for this server."""
 
+    __force_shutdown: bool = False
+
     def __init__(self, args: Args):
         logging.debug(pprint(args))
         self.args = args
@@ -105,8 +107,9 @@ class PsyncServer:
     ) -> Callable[[ServerConnection, Request], Response | None]:
         def inner(ws: ServerConnection, _req: Request) -> Response | None:
             addrs: tuple[str, str] = ws.remote_address  # pyright: ignore[reportAny]
-            (host, _port) = addrs
+            (host, port) = addrs
             if host not in self.args.origins:
+                logging.info(f"Rejecting unknown request origin {host}:{port}")
                 return ws.respond(400, "Client address not recognized.")
 
         return inner
@@ -121,11 +124,16 @@ class PsyncServer:
 
     def __mk_handle_signal(self, ws: ServerConnection):
         async def inner():
-            logging.info("Gracefully shutting down...")
-            await ws.close()
-            _ = self.__coroutine.cancel()  # pyright: ignore[reportOptionalMemberAccess]
-            asyncio.get_event_loop().stop()
-            exit(130)
+            if not self.__force_shutdown:
+                logging.info("Gracefully shutting down...")
+                self.__force_shutdown = True
+                await ws.close()
+                _ = self.__coroutine.cancel()  # pyright: ignore[reportOptionalMemberAccess]
+                asyncio.get_event_loop().stop()
+                raise SystemExit(130)
+            else:
+                logging.warning("Second Ctrl-C detected, forcing shutdown.")
+                raise SystemExit(130)
 
         return lambda: asyncio.create_task(inner())
 
@@ -248,7 +256,12 @@ def main(args: Args | None = None):
     """Run the server as an executable."""
     args = parse_args() if args is None else args
     logging.basicConfig(handlers=[InterceptHandler()], level=args.log_level, force=True)
-    asyncio.run(PsyncServer(args).serve())
+    try:
+        asyncio.run(PsyncServer(args).serve())
+    except SystemExit as e:
+        exit(e.code)
+    except Exception:
+        exit(1)
 
 
 if __name__ == "__main__":

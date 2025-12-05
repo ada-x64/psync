@@ -48,10 +48,11 @@ class PsyncClient:
                 await ws.send(serialize(KillReq()))
                 await ws.close()
                 asyncio.get_event_loop().stop()
+                raise SystemExit(130)
             else:
                 logging.warning("Got second SIGINT, shutting down")
                 asyncio.get_event_loop().stop()
-                raise Exception("Forced shutdown")
+                raise SystemExit(1)
 
         return lambda: asyncio.create_task(inner())
 
@@ -88,7 +89,7 @@ class PsyncClient:
                         f"Failed to deserialize message '{msg}' with error '{e}'"
                     )
                     await ws.close()
-                    exit(1)
+                    raise Exception(e)
 
                 match resp:
                     case LogResp():
@@ -96,11 +97,11 @@ class PsyncClient:
                     case ErrorResp():
                         logging.error(f"Received server error: {resp.msg}")
                         await ws.close()
-                        exit(1)
+                        raise Exception(resp.msg)
                     case ExitResp():
                         logging.info(f"Exiting with code {resp.exit_code}")
                         await ws.close()
-                        exit(resp.exit_code)
+                        raise SystemExit(resp.exit_code)
                     case OkayResp():
                         logging.info("Running exectuable...")
                     case _:
@@ -139,8 +140,12 @@ def main(args: Args | None = None):
     args = parse_args() if args is None else args
     __rsync(args)
 
-    client = PsyncClient(args)
-    asyncio.run(client.run())
+    try:
+        asyncio.run(PsyncClient(args).run())
+    except SystemExit as e:
+        exit(e.code)
+    except Exception:
+        exit(1)
 
 
 if __name__ == "__main__":
