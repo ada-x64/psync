@@ -1,4 +1,4 @@
-#! /usr/local/bin/python3
+#!/usr/local/bin/uv run
 import datetime
 
 print("hi")

@@ -1,26 +1,71 @@
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from os import environ
 from pathlib import Path
-
-SSL_CERT_PATH: str = environ.get("SSL_CERT_PATH", "~/.local/share/psync/cert.pem")
-SSL_KEY_PATH: str = environ.get("SSL_KEY_PATH", "~/.local/share/psync/key.pem")
-PSYNC_HOST: str = environ.get("PSYNC_SERVER_IP", "0.0.0.0")
-PSYNC_PORT: str = environ.get("PSYNC_SERVER_PORT", "5000")
-PSYNC_ORIGINS: str = environ.get("PSYNC_ORIGINS", "localhost 127.0.0.1")
-PSYNC_LOG: str = environ.get("PSYNC_LOG", "INFO").upper()
-PSYNC_USER: str | None = environ.get("PSYNC_USER", None)
 
 
 @dataclass
 class Args:
+    """
+    Server arguments.
+    """
+
     use_base_env: bool
-    host: str
-    port: str
-    origins: list[str]
-    user: str | None
-    cert_path: Path
-    key_path: Path
+    """
+    flag: ``--use-base-env, -E``
+
+    Use the current environment in addition to the values specified in the websocket request.
+    """
+    cert_path: Path = Path(
+        environ.get("PSYNC_SSL_CERT_PATH", "~/.local/share/psync/cert.pem")
+    ).expanduser()
+    """
+    environ: ``PSYNC_SSL_CERT_PATH``
+
+    Path to the SSL certificate used to authenticate this server.
+    """
+    key_path: Path = Path(
+        environ.get("PSYNC_SSL_KEY_PATH", "~/.local/share/psync/key.pem")
+    ).expanduser()
+    """
+    environ: ``PSYNC_SSL_KEY_PATH``
+
+    Path to the SSL private key.
+    """
+    host: str = environ.get("PSYNC_SERVER_IP", "0.0.0.0")
+    """
+    environ: ``PSYNC_SERVER_IP``
+
+    Host IP on which to listen for incoming connections.
+    """
+    port: str = environ.get("PSYNC_SERVER_PORT", "5000")
+    """
+    environ: ``PSYNC_SERVER_PORT``
+
+    Host port on which to listen for incoming connections.
+    """
+    origins: list[str] = field(
+        default_factory=lambda: environ.get(
+            "PSYNC_ORIGINS", "localhost 127.0.0.1"
+        ).split()
+    )
+    """
+    environ: ``PSYNC_ORIGINS``
+
+    Accepted client origins. Should match the HTTP Origin header.
+    """
+    log_level: str = environ.get("PSYNC_LOG_LEVEL", "INFO").upper()
+    """
+    environ: ``PSYNC_LOG_LEVEL``
+
+    Log level.
+    """
+    user: str | None = environ.get("PSYNC_USER", None)
+    """
+    environ: ``PSYNC_USER``
+
+    User used to execute the requested binaries.
+    """
 
 
 parser = argparse.ArgumentParser(
@@ -58,12 +103,5 @@ _action = parser.add_argument(
 def parse_args() -> Args:
     args = vars(parser.parse_args())
     return Args(
-        use_base_env=args["use_base_env"],
-        host=PSYNC_HOST,
-        port=PSYNC_PORT,
-        origins=PSYNC_ORIGINS.split(),
-        user=PSYNC_USER,
-        cert_path=Path(SSL_CERT_PATH).expanduser(),
-        key_path=Path(SSL_KEY_PATH).expanduser(),
+        use_base_env=args["use_base_env"],  # pyright: ignore[reportAny]
     )
-    print(args)

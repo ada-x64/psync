@@ -1,0 +1,45 @@
+name: Run tests
+
+on:
+  # publish on pushes to the main branch (image tagged as "latest")
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install Python 3.13
+        run: uv python install 3.13
+
+      - name: Build
+        run: uv build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up Docker Compose
+        uses: docker/setup-compose-action@v1
+
+      - name: Generate SSH key
+        run: ssh-keygen -N '' -f ./test/assets/ssh-key
+
+      - name: Generate SSL key
+        run:
+          openssl req -x509 -newkey rsa:4096 -keyout ./test/assets/key.pem -out ./test/assets/cert.pem
+          -sha256 -days 3650 -nodes -subj "/C=XX/ST=st/L=c/O=o/OU=ou/CN=127.0.0.1"
+          -addext "subjectAltName=DNS:localhost,DNS:psync-server,IP:127.0.0.1"
+
+      - name: assure permissions
+        run: cd ./test/assets/ && chmod 644 cert.pem ssh-key.pub && chmod 600 ssh-key key.pem
+
+      - name: Run tests
+        run: uv run pytest

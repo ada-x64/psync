@@ -15,6 +15,7 @@ class Mode(Enum):
 class ReqKind(Enum):
     Open = "open"
     Kill = "kill"
+    HealthCheck = "hc"
 
 
 class RespKind(Enum):
@@ -22,6 +23,7 @@ class RespKind(Enum):
     Error = "error"
     Exit = "exit"
     Okay = "ok"
+    SetPid = "set_pid"
 
 
 @dataclass
@@ -34,6 +36,7 @@ class OpenReq:
 
 @dataclass
 class KillReq:
+    pid: int
     kind: ReqKind = ReqKind.Kill
 
 
@@ -60,28 +63,44 @@ class OkayResp:
     kind: RespKind = RespKind.Okay
 
 
-Req = OpenReq | KillReq
-Resp = LogResp | ExitResp | ErrorResp | OkayResp
+@dataclass
+class HealthCheckReq:
+    kind: ReqKind = ReqKind.HealthCheck
+
+
+@dataclass
+class SetPidResp:
+    pid: int
+    kind: RespKind = RespKind.SetPid
+
+
+Req = OpenReq | KillReq | HealthCheckReq
+Resp = LogResp | ExitResp | ErrorResp | OkayResp | SetPidResp
 
 
 def serialize(msg: Req | Resp) -> str:
+    value = msg.kind.value
     match msg:
         case OpenReq():
             args = " ".join(msg.args)
             env: list[str] = []
             for key, value in msg.env.items():
                 env.append(f'{key}="{value}"')
-            return f"open path='{msg.path}' args='{args}' env='{' '.join(env)}'"
+            return f"{value} path='{msg.path}' args='{args}' env='{' '.join(env)}'"
         case KillReq():
-            return "kill"
+            return f"{value} {msg.pid}"
+        case SetPidResp():
+            return f"{value} {msg.pid}"
         case LogResp():
-            return f"log {msg.msg}"
+            return f"{value} {msg.msg}"
         case ExitResp():
-            return f"exit {msg.exit_code}"
+            return f"{value} {msg.exit_code}"
         case ErrorResp():
-            return f"error {msg.msg}"
+            return f"{value} {msg.msg}"
         case OkayResp():
-            return "okay"
+            return f"{value}"
+        case HealthCheckReq():
+            return f"{value}"
 
 
 path_expr = re.compile(r"path='([^']+)'")
@@ -106,13 +125,8 @@ def deserialize(msg: str) -> Req | Resp:
     logging.debug(f"Got message {msg}")
     try:
         [kind, rest] = msg.split(" ", 1)
-    except Exception as e:
-        if msg == "okay":
-            return OkayResp()
-        elif msg == "kill":
-            return KillReq()
-        else:
-            raise e
+    except Exception:
+        kind = msg.strip()
 
     match kind:
         case ReqKind.Open.value:
@@ -134,12 +148,20 @@ def deserialize(msg: str) -> Req | Resp:
 
             return OpenReq(path=Path(path), args=args, env=env)
 
+        case ReqKind.Kill.value:
+            return KillReq(int(rest))
         case RespKind.Log.value:
-            return LogResp(msg=rest)
+            return LogResp(rest)
         case RespKind.Exit.value:
-            return ExitResp(exit_code=rest)
+            return ExitResp(rest)
         case RespKind.Error.value:
-            return ErrorResp(msg=rest)
+            return ErrorResp(rest)
+        case RespKind.Okay.value:
+            return OkayResp()
+        case ReqKind.HealthCheck.value:
+            return HealthCheckReq()
+        case RespKind.SetPid.value:
+            return SetPidResp(int(rest))
 
         case _:
             raise ValueError("Could not match kind for message", msg)

@@ -1,6 +1,6 @@
 [project]
 name = "cubething_psync"
-version = "0.2.1.dev2"
+version = "0.3.0"
 description = "Simple project synchronization tool."
 authors = [{name = "ada mandala", email="ada@cubething.dev"}]
 readme = "README.md"
@@ -26,6 +26,18 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where= ["src"]
 
+[dependency-groups]
+dev = [
+    "basedpyright>=1.35.0",
+    "pytest>=9.0.1",
+    "ruff>=0.14.7",
+    "testcontainers>=4.13.3",
+]
+
 [project.scripts]
 psync-server = "server.main:main"
 psync-client = "client.main:main"
+
+[pytest]
+testpaths="test"
+addopts = ["--import-mode=importlib"]
