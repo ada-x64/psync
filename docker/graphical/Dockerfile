@@ -35,5 +35,10 @@ RUN chown psync:psync /app -R
 USER psync
 RUN uv sync --locked
 
+COPY --from=ghcr.io/vi/websocat:latest /usr/local/bin/websocat /usr/local/bin/websocat
+
+HEALTHCHECK --interval=5s\
+    CMD ["sh", "-c", "exit $([ $(echo 'hc' | /usr/local/bin/websocat -k -1 wss://0.0.0.0:5000) = 'ok' ])"]
+
 USER root
 CMD ["docker/run-server.sh", "-E"]

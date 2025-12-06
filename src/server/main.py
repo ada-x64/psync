@@ -28,6 +28,8 @@ from common.data import (
     LogResp,
     OkayResp,
     OpenReq,
+    SetPidResp,
+    HealthCheckReq,
     serialize,
     deserialize,
 )
@@ -146,6 +148,10 @@ class PsyncServer:
                             await self.__open(req, ws)
                         case KillReq():
                             await self.__kill(req, ws)
+                        case HealthCheckReq():
+                            logging.info("Health check OK")
+                            await ws.send(serialize(OkayResp()))
+                            await ws.close()
                         case _:
                             logging.warning(f"Got unknown request {req}")
             except ConnectionClosedOK:
@@ -186,7 +192,7 @@ class PsyncServer:
             else:
                 self.__tasks[host][p.pid] = task
 
-            resp = OkayResp(pid=p.pid)
+            resp = SetPidResp(pid=p.pid)
             await ws.send(serialize(resp))
 
         except Exception as e:

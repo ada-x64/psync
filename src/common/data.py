@@ -15,6 +15,7 @@ class Mode(Enum):
 class ReqKind(Enum):
     Open = "open"
     Kill = "kill"
+    HealthCheck = "hc"
 
 
 class RespKind(Enum):
@@ -22,6 +23,7 @@ class RespKind(Enum):
     Error = "error"
     Exit = "exit"
     Okay = "ok"
+    SetPid = "set_pid"
 
 
 @dataclass
@@ -58,12 +60,22 @@ class ErrorResp:
 
 @dataclass
 class OkayResp:
-    pid: int
     kind: RespKind = RespKind.Okay
 
 
-Req = OpenReq | KillReq
-Resp = LogResp | ExitResp | ErrorResp | OkayResp
+@dataclass
+class HealthCheckReq:
+    kind: ReqKind = ReqKind.HealthCheck
+
+
+@dataclass
+class SetPidResp:
+    pid: int
+    kind: RespKind = RespKind.SetPid
+
+
+Req = OpenReq | KillReq | HealthCheckReq
+Resp = LogResp | ExitResp | ErrorResp | OkayResp | SetPidResp
 
 
 def serialize(msg: Req | Resp) -> str:
@@ -77,6 +89,8 @@ def serialize(msg: Req | Resp) -> str:
             return f"{value} path='{msg.path}' args='{args}' env='{' '.join(env)}'"
         case KillReq():
             return f"{value} {msg.pid}"
+        case SetPidResp():
+            return f"{value} {msg.pid}"
         case LogResp():
             return f"{value} {msg.msg}"
         case ExitResp():
@@ -84,7 +98,9 @@ def serialize(msg: Req | Resp) -> str:
         case ErrorResp():
             return f"{value} {msg.msg}"
         case OkayResp():
-            return f"{value} {msg.pid}"
+            return f"{value}"
+        case HealthCheckReq():
+            return f"{value}"
 
 
 path_expr = re.compile(r"path='([^']+)'")
@@ -107,7 +123,10 @@ def deserialize_env(input: str) -> dict[str, str]:
 
 def deserialize(msg: str) -> Req | Resp:
     logging.debug(f"Got message {msg}")
-    [kind, rest] = msg.split(" ", 1)
+    try:
+        [kind, rest] = msg.split(" ", 1)
+    except Exception:
+        kind = msg.strip()
 
     match kind:
         case ReqKind.Open.value:
@@ -138,7 +157,11 @@ def deserialize(msg: str) -> Req | Resp:
         case RespKind.Error.value:
             return ErrorResp(rest)
         case RespKind.Okay.value:
-            return OkayResp(int(rest))
+            return OkayResp()
+        case ReqKind.HealthCheck.value:
+            return HealthCheckReq()
+        case RespKind.SetPid.value:
+            return SetPidResp(int(rest))
 
         case _:
             raise ValueError("Could not match kind for message", msg)

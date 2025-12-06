@@ -38,5 +38,8 @@ jobs:
           -sha256 -days 3650 -nodes -subj "/C=XX/ST=st/L=c/O=o/OU=ou/CN=127.0.0.1"
           -addext "subjectAltName=DNS:localhost,DNS:psync-server,IP:127.0.0.1"
 
+      - name: assure permissions
+        run: cd ./test/assets/ && chmod 644 cert.pem ssh-key.pub && chmod 600 ssh-key key.pem
+
       - name: Run tests
         run: uv run pytest

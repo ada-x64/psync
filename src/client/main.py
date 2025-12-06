@@ -17,6 +17,7 @@ from common.data import (
     LogResp,
     OkayResp,
     OpenReq,
+    SetPidResp,
     deserialize,
     serialize,
 )
@@ -107,9 +108,11 @@ class PsyncClient:
                         logging.info(f"Exiting with code {resp.exit_code}")
                         await ws.close()
                         raise SystemExit(resp.exit_code)
-                    case OkayResp():
-                        logging.info(f"OK. Remote PID = {resp.pid}")
+                    case SetPidResp():
+                        logging.info(f"Remote PID = {resp.pid}")
                         self.pid = resp.pid
+                    case OkayResp():
+                        logging.info("OK.")
                     case _:
                         logging.warning(f"Got unknown request {resp}")
 
