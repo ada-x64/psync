@@ -145,8 +145,12 @@ PSYNC_SERVER_DEST   | /home/psync/
 PSYNC_SSH_ARGS      | -l psync
 PSYNC_CERT_PATH     | ~/.local/share/psync/cert.pem
 PSYNC_CLIENT_ORIGIN | 127.0.0.1
+PSYNC_LOG_FILE      | None (stdout)
 
 SSH arguments will be append with "-p {PSYNC_SSH_PORT}"
+
+For more info, please read the docs:
+    https://psync.readthedocs.io/
 """,
 )
 _action = parser.add_argument(

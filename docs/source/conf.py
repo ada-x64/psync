@@ -1,13 +1,18 @@
 # Configuration file for the Sphinx documentation builder.
 
+import tomllib
+from pathlib import Path
+from os.path import dirname
+
 # -- Project information
 
 project = "cubething_psync"
 copyright = "2025, ada mandala"
 author = "ada mandala"
 
-release = "0.2"
-version = "0.2"
+toml = tomllib.load(open(Path(dirname(__file__)) / "../../pyproject.toml", 'rb'))
+release = toml["project"]["version"]
+version = release
 
 # -- General configuration
 
