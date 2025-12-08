@@ -2,6 +2,8 @@
 psync client
 """
 
+from io import TextIOWrapper
+import sys
 import asyncio
 import os
 from pathlib import Path
@@ -28,6 +30,14 @@ from client.args import (
     parse_args,
 )
 
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from _typeshed import SupportsWrite
+    Logfile = SupportsWrite[str]
+else:
+    Logfile = Any
+
 
 class PsyncClient:
     """
@@ -39,9 +49,23 @@ class PsyncClient:
     pid: int | None = None
     """ID of the current connection."""
     __force_exit: bool = False
+    __outfile: Logfile
 
     def __init__(self, args: Args):
         self.args = args
+        if isinstance(self.args.logfile, Path):
+            self.__outfile = open(self.args.logfile, "w")
+        elif self.args.logfile is not None:
+            self.__outfile = self.args.logfile
+        else:
+            self.__outfile = sys.stdout
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self):
+        if isinstance(self.__outfile, TextIOWrapper):
+            self.__outfile.close()
 
     def __mk_handler(self, ws: websockets.ClientConnection):
         async def inner():
@@ -99,7 +123,7 @@ class PsyncClient:
 
                 match resp:
                     case LogResp():
-                        print(resp.msg, end="")
+                        print(resp.msg, end="", file=self.__outfile)
                     case ErrorResp():
                         logging.error(f"Received server error: {resp.msg}")
                         await ws.close()

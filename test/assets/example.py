@@ -1,7 +1,6 @@
-#!/usr/local/bin/uv run
+#!/usr/bin/env -S uv run --script
 import datetime
 
-print("hi")
 while True:
     time = datetime.datetime.now()
     diff = datetime.datetime.now() - time

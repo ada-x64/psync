@@ -1,0 +1,15 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.7, pytest-9.0.1, pluggy-1.6.0
+rootdir: /home/ada/repos/psync
+configfile: pyproject.toml
+collected 6 items
+
+test/test_integration.py ......                                          [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.13/site-packages/testcontainers/core/waiting_utils.py:215
+  /home/ada/repos/psync/.venv/lib/python3.13/site-packages/testcontainers/core/waiting_utils.py:215: DeprecationWarning: The @wait_container_is_ready decorator is deprecated and will be removed in a future version. Use structured wait strategies instead: container.waiting_for(HttpWaitStrategy(8080).for_status_code(200)) or container.waiting_for(LogMessageWaitStrategy('ready'))
+    @wait_container_is_ready()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=================== 6 passed, 1 warning in 67.57s (0:01:07) ====================

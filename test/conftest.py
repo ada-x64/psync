@@ -17,6 +17,7 @@ logging.basicConfig(handlers=[InterceptHandler()], level=log_level, force=True)
 logger.remove()
 
 
+
 @pytest.fixture(scope="session", autouse=True)
 def build_server():
     exit = Popen(

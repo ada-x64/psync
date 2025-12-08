@@ -7,6 +7,12 @@ from os.path import basename
 from pathlib import Path
 import shlex
 from common.data import deserialize_env
+from typing import TYPE_CHECKING, Any
+if TYPE_CHECKING:
+    from _typeshed import SupportsWrite
+    Logfile = SupportsWrite[str] | Path | None
+else:
+    Logfile = Any
 
 
 @dataclass
@@ -94,6 +100,13 @@ class Args:
 
     Domain name. Should match the origins set in the server's ``PSYNC_ORIGINS``
     variable.
+    """
+
+    logfile: Logfile = None
+    """
+    environ: ``PSYNC_LOG_FILE``
+
+    Optional file where the executable's logs will be output.
     """
 
     def project_hash(self) -> str:

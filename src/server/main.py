@@ -166,10 +166,18 @@ class PsyncServer:
     async def __open(self, req: OpenReq, ws: ServerConnection):
         host = self.__get_host(ws)
         path = pathlib.Path.expanduser(req.path).resolve()
-        args = [str(path), *req.args]
-        env = req.env if not self.args.use_base_env else {**environ, **req.env}
+        base_env = environ.copy() if self.args.use_base_env else {}
+        if not self.args.use_base_env:
+            # still get path and etc
+            for var in ['PATH','HOME','USER','SHELL']:
+                if var in environ:
+                    base_env[var] = environ[var]
+            if environ['VIRTUAL_ENV'] is not None:
+                base_env['VIRUTAL_ENV'] = environ['VIRTUAL_ENV']
+                base_env["PATH"] = f"{environ['VIRTUAL_ENV']}/bin:{base_env["PATH"]}"
+        env = base_env | req.env
 
-        info_log = f"Running `[...]/{basename(args[0])} {' '.join(args[1:])}`..."
+        info_log = f"Running `{path} {' '.join(req.args)}`"
         if env != {}:
             info_log += f"\n... with env {pprint(env)}"
         if self.args.user is not None:
@@ -179,7 +187,8 @@ class PsyncServer:
 
         try:
             p = await asyncio.create_subprocess_exec(
-                *args,
+                path,
+                *req.args,
                 env=env,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
@@ -196,7 +205,7 @@ class PsyncServer:
             await ws.send(serialize(resp))
 
         except Exception as e:
-            logging.error(f"Failed to start process `{args[0]}` with error {e}")
+            logging.error(f"Failed to start process `{path}` with error {e}")
             resp = ErrorResp(f"Server error: {e}")
             await ws.send(serialize(resp))
 
