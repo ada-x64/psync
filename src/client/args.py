@@ -7,6 +7,12 @@ from os.path import basename
 from pathlib import Path
 import shlex
 from common.data import deserialize_env
+from typing import TYPE_CHECKING, Any
+if TYPE_CHECKING:
+    from _typeshed import SupportsWrite
+    Logfile = SupportsWrite[str] | Path | None
+else:
+    Logfile = Any
 
 
 @dataclass
@@ -96,6 +102,13 @@ class Args:
     variable.
     """
 
+    logfile: Logfile = None
+    """
+    environ: ``PSYNC_LOG_FILE``
+
+    Optional file where the executable's logs will be output.
+    """
+
     def project_hash(self) -> str:
         """
         Hash value generated from the target path. Used as the directory name for the project.
@@ -132,8 +145,12 @@ PSYNC_SERVER_DEST   | /home/psync/
 PSYNC_SSH_ARGS      | -l psync
 PSYNC_CERT_PATH     | ~/.local/share/psync/cert.pem
 PSYNC_CLIENT_ORIGIN | 127.0.0.1
+PSYNC_LOG_FILE      | None (stdout)
 
 SSH arguments will be append with "-p {PSYNC_SSH_PORT}"
+
+For more info, please read the docs:
+    https://psync.readthedocs.io/
 """,
 )
 _action = parser.add_argument(

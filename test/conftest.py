@@ -17,6 +17,7 @@ logging.basicConfig(handlers=[InterceptHandler()], level=log_level, force=True)
 logger.remove()
 
 
+
 @pytest.fixture(scope="session", autouse=True)
 def build_server():
     exit = Popen(
@@ -35,7 +36,7 @@ def build_server():
 
 
 @pytest.fixture(scope="function", autouse=True)
-def server(request: pytest.FixtureRequest, build_server):
+def server(request: pytest.FixtureRequest, build_server): #pyright: ignore[reportUnusedParameter]
     container = DockerContainer(
         image="psync-server:latest",
         ports=[5000, 5022],

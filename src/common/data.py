@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from dataclasses import dataclass
 import logging
 from pathlib import Path
@@ -30,7 +29,7 @@ class RespKind(Enum):
 class OpenReq:
     path: Path
     args: list[str]
-    env: Mapping[str, str]
+    env: dict[str,str]
     kind: ReqKind = ReqKind.Open
 
 
@@ -84,8 +83,8 @@ def serialize(msg: Req | Resp) -> str:
         case OpenReq():
             args = " ".join(msg.args)
             env: list[str] = []
-            for key, value in msg.env.items():
-                env.append(f'{key}="{value}"')
+            for k, v in msg.env.items():
+                env.append(f'{k}="{v}"')
             return f"{value} path='{msg.path}' args='{args}' env='{' '.join(env)}'"
         case KillReq():
             return f"{value} {msg.pid}"
@@ -127,6 +126,7 @@ def deserialize(msg: str) -> Req | Resp:
         [kind, rest] = msg.split(" ", 1)
     except Exception:
         kind = msg.strip()
+        rest = ""
 
     match kind:
         case ReqKind.Open.value:
