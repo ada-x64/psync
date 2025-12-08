@@ -1,4 +1,3 @@
-from collections.abc import Mapping
 from dataclasses import dataclass
 import logging
 from pathlib import Path

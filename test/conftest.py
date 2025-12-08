@@ -36,7 +36,7 @@ def build_server():
 
 
 @pytest.fixture(scope="function", autouse=True)
-def server(request: pytest.FixtureRequest, build_server):
+def server(request: pytest.FixtureRequest, build_server): #pyright: ignore[reportUnusedParameter]
     container = DockerContainer(
         image="psync-server:latest",
         ports=[5000, 5022],

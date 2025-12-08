@@ -9,7 +9,6 @@ import asyncio
 from asyncio.tasks import Task
 from asyncio.subprocess import Process
 from collections.abc import Awaitable
-from os.path import basename
 import pathlib
 import signal
 import ssl
@@ -172,7 +171,7 @@ class PsyncServer:
             for var in ['PATH','HOME','USER','SHELL']:
                 if var in environ:
                     base_env[var] = environ[var]
-            if environ['VIRTUAL_ENV'] is not None:
+            if 'VIRTUAL_ENV' in environ:
                 base_env['VIRUTAL_ENV'] = environ['VIRTUAL_ENV']
                 base_env["PATH"] = f"{environ['VIRTUAL_ENV']}/bin:{base_env["PATH"]}"
         env = base_env | req.env
