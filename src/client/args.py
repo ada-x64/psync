@@ -200,19 +200,19 @@ def parse_args(input: list[str] | None = None) -> Args:
     assets_raw = args.get("assets")
     if assets_raw is not None:
         assets = shlex.split(" ".join(assets_raw))
-    print(f"{assets_raw} -> {assets}")
+    logging.debug(f"ASSETS: {assets_raw} -> {assets}")
 
     client_args: list[str] = []
     raw_args = args.get("args")
     if raw_args is not None:
         client_args = shlex.split(' '.join(raw_args))
-    print(f"{raw_args} -> {client_args}")
+    logging.debug(f"ARGS: {raw_args} -> {client_args}")
 
     env: dict[str, str] = dict()
     raw_env = args.get("env")
     if raw_env is not None:
         env = deserialize_env(f"env='{" ".join(raw_env)}'")
-    print(f"{raw_env} -> {env}")
+    logging.debug(f"ENV: {raw_env} -> {env}")
 
     ret = Args(
         target_path=str(target_path),
@@ -220,5 +220,5 @@ def parse_args(input: list[str] | None = None) -> Args:
         env=env,
         args=client_args,
     )
-    print(pprint(ret))
+    logging.debug(pprint(ret))
     return ret

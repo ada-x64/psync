@@ -175,7 +175,7 @@ def test_parse_args():
 
     noquotes_fail = shlex.split(f"{path} -a foo -f bar")
     try:
-        parse_args(noquotes)
+        parse_args(noquotes_fail)
         assert False
-    except Exception as e:
+    except SystemExit:
         pass
