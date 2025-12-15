@@ -193,7 +193,7 @@ Then, you should be able to access it from the command line.
 
 .. code-block :: bash
 
-    psync-client --help
+    psync --help
 
 Refer to the help command and the :doc:`api docs <./generated/client.main>` for
 more details.

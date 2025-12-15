@@ -30,6 +30,16 @@ for psync. Similar for the laptop.
 
 .. _game project: https://cubething.dev/qproj/general-introduction
 
+Security
+--------
+
+Psync communicates over a secure websocket connection. The connection is typically achieved with a
+self-signed certificate which is accepted client-side. In addition, the server checks for an acceptable
+Origin header on the initial websocket handshake, though this can easily be spoofed. Initial project
+synchonization occurs over rsync with SSH as the transport layer. All in all, psync is only as secure
+as you make it. As such, I do not recommend running this on a public-facing server unless you really
+know what you're doing.
+
 About the bird
 --------------
 
