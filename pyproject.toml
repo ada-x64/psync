@@ -1,6 +1,6 @@
 [project]
 name = "cubething_psync"
-version = "0.4.1"
+version = "0.5.0"
 description = "Simple project synchronization tool."
 authors = [{name = "ada mandala", email="ada@cubething.dev"}]
 readme = "README.md"
@@ -36,7 +36,7 @@ dev = [
 
 [project.scripts]
 psync-server = "server.main:main"
-psync-client = "client.main:main"
+psync = "client.main:main"
 
 [pytest]
 testpaths="test"

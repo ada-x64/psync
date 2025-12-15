@@ -7,6 +7,7 @@ from os.path import basename
 from pathlib import Path
 import shlex
 from common.data import deserialize_env
+from pprint import PrettyPrinter
 from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from _typeshed import SupportsWrite
@@ -14,6 +15,20 @@ if TYPE_CHECKING:
 else:
     Logfile = Any
 
+pprint = PrettyPrinter().pformat
+
+ENV_DEFAULTS = {
+    "server_ip": os.environ.get("PSYNC_SERVER_IP", "127.0.0.1"),
+    "server_port": os.environ.get("PSYNC_SERVER_PORT", "5000"),
+    "server_ssh_port": os.environ.get("PSYNC_SSH_PORT", "5022"),
+    "ssh_args": os.environ.get("PSYNC_SSH_ARGS", "-l psync"),
+    "server_dest": os.environ.get("PSYNC_SERVER_DEST", "/home/psync"),
+    "cert_path": os.environ.get(
+           "PSYNC_CERT_PATH", "~/.local/share/psync/cert.pem"
+       ),
+    "client_origin": os.environ.get("PSYNC_CLIENT_ORIGIN", "127.0.0.1"),
+    "log_file": os.environ.get("PSYNC_LOG_FILE", "")
+}
 
 @dataclass
 class Args:
@@ -23,7 +38,7 @@ class Args:
 
     target_path: str
     """
-    ``--path -p <target_path>``
+    ``<target_path>``
 
     **Required.** Path to the target executable.
     """
@@ -49,28 +64,28 @@ class Args:
     Arguments passed to the executable.
     """
 
-    server_ip: str = os.environ.get("PSYNC_SERVER_IP", "127.0.0.1")
+    server_ip: str = ENV_DEFAULTS["server_ip"]
     """
     environ: ``PSYNC_SERVER_IP``
 
     Server IP address.
     """
 
-    server_port: int = int(os.environ.get("PSYNC_SERVER_PORT", "5000"))
+    server_port: int = int(ENV_DEFAULTS["server_port"])
     """
     environ: ``PSYNC_SERVER_PORT``
 
     Server port.
     """
 
-    server_ssh_port: int = int(os.environ.get("PSYNC_SSH_PORT", "5022"))
+    server_ssh_port: int = int(ENV_DEFAULTS["server_ssh_port"])
     """
     environ: ``PSYNC_SSH_PORT``
 
     SSH port on the server host. Client must be authenticated with a shared public key.
     """
 
-    ssh_args: str = os.environ.get("PSYNC_SSH_ARGS", "-l psync")
+    ssh_args: str = ENV_DEFAULTS["ssh_args"]
     """
     environ: ``PSYNC_SSH_ARGS``
 
@@ -78,23 +93,21 @@ class Args:
     ``rsync -e "/usr/bin/ssh {PSYNC_SSH_ARGS} -p {PSYNC_SSH_PORT}"``
     """
 
-    server_dest: str = os.environ.get("PSYNC_SERVER_DEST", "/home/psync")
+    server_dest: str = ENV_DEFAULTS["server_dest"]
     """
     environ: ``PSYNC_SERVER_DEST``
 
     Base path on the server where the files should be synced.
     """
 
-    ssl_cert_path: str = os.environ.get(
-        "PSYNC_CERT_PATH", "~/.local/share/psync/cert.pem"
-    )
+    ssl_cert_path: str = ENV_DEFAULTS["cert_path"]
     """
     environ: ``PSYNC_CERT_PATH``
 
     Public SSL certificate used to trust the psync server.
     """
 
-    client_origin: str = os.environ.get("PSYNC_CLIENT_ORIGIN", "127.0.0.1")
+    client_origin: str = ENV_DEFAULTS["client_origin"]
     """
     environ: ``PSYNC_CLIENT_ORIGIN``
 
@@ -130,33 +143,31 @@ class Args:
 
 parser = argparse.ArgumentParser(
     prog="psync-client",
-    usage="""\
+    usage="psync [OPTIONS] <target_path>",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog=f"""\
 Client for the psync server.
 
-In addition to the options below, the client is configurable through environment
+In addition to the options above, the client is configurable through environment
 variables.
 
-Variable            | Default
+Variable            | Current value
 --------------------+-------------------------------
-PSYNC_SERVER_IP     | 127.0.0.1
-PSYNC_SERVER_PORT   | 5000
-PSYNC_SSH_PORT      | 5022
-PSYNC_SERVER_DEST   | /home/psync/
-PSYNC_SSH_ARGS      | -l psync
-PSYNC_CERT_PATH     | ~/.local/share/psync/cert.pem
-PSYNC_CLIENT_ORIGIN | 127.0.0.1
-PSYNC_LOG_FILE      | None (stdout)
+PSYNC_SERVER_IP     | {ENV_DEFAULTS["server_ip"]}
+PSYNC_SERVER_PORT   | {ENV_DEFAULTS["server_port"]}
+PSYNC_SSH_PORT      | {ENV_DEFAULTS["server_ssh_port"]}
+PSYNC_SERVER_DEST   | {ENV_DEFAULTS["server_dest"]}
+PSYNC_SSH_ARGS      | {ENV_DEFAULTS["ssh_args"]}
+PSYNC_CERT_PATH     | {ENV_DEFAULTS["cert_path"]}
+PSYNC_CLIENT_ORIGIN | {ENV_DEFAULTS["client_origin"]}
+PSYNC_LOG_FILE      | {ENV_DEFAULTS["log_file"]}
 
-SSH arguments will be append with "-p {PSYNC_SSH_PORT}"
-
-For more info, please read the docs:
-    https://psync.readthedocs.io/
+SSH arguments will be append with "-p PSYNC_SSH_PORT"
+For more info, please read the docs: <https://psync.readthedocs.io/>\
 """,
 )
 _action = parser.add_argument(
-    "--path",
-    "-p",
-    required=True,
+    "path",
     help="Path to the target exectuable.",
 )
 _action = parser.add_argument(
@@ -169,14 +180,15 @@ _action = parser.add_argument(
     "--env",
     "-e",
     help="Environment variables to set in the remote execution environment. Variables must be space-sepated or double-quoted.",
+    nargs="+"
 )
 _action = parser.add_argument(
-    "--args", "-a", help="Arguments passed to the executable."
+    "--args", "-a", help="Arguments passed to the executable.", nargs="+"
 )
 
 
-def parse_args() -> Args:
-    args = vars(parser.parse_args())
+def parse_args(input: list[str] | None = None) -> Args:
+    args = vars(parser.parse_args(input))
 
     target_path = str(args.get("path"))
     target_path = Path(target_path)
@@ -184,24 +196,29 @@ def parse_args() -> Args:
         logging.error(f"Could not file at {target_path}")
         exit(1)
 
-    extra: list[str] = []
-    extra_raw = args.get("extra")
-    if extra_raw is not None:
-        extra = extra_raw  # pyright: ignore[reportAny]
+    assets: list[str] = []
+    assets_raw = args.get("assets")
+    if assets_raw is not None:
+        assets = shlex.split(" ".join(assets_raw))
+    print(f"{assets_raw} -> {assets}")
 
     client_args: list[str] = []
     raw_args = args.get("args")
     if raw_args is not None:
-        client_args = shlex.split(str(raw_args))  # pyright: ignore[reportAny]
+        client_args = shlex.split(' '.join(raw_args))
+    print(f"{raw_args} -> {client_args}")
 
     env: dict[str, str] = dict()
     raw_env = args.get("env")
     if raw_env is not None:
-        env = deserialize_env(f"env='{raw_env}'")
+        env = deserialize_env(f"env='{" ".join(raw_env)}'")
+    print(f"{raw_env} -> {env}")
 
-    return Args(
+    ret = Args(
         target_path=str(target_path),
-        assets=extra or [],
+        assets=assets or [],
         env=env,
         args=client_args,
     )
+    print(pprint(ret))
+    return ret

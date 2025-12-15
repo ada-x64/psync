@@ -18,7 +18,7 @@ logger.remove()
 
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def build_server():
     exit = Popen(
         [
@@ -35,7 +35,7 @@ def build_server():
     return None
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 def server(request: pytest.FixtureRequest, build_server): #pyright: ignore[reportUnusedParameter]
     container = DockerContainer(
         image="psync-server:latest",
