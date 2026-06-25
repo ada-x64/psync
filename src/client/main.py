@@ -2,16 +2,24 @@
 psync client
 """
 
-from io import TextIOWrapper
-import sys
 import asyncio
+import logging
 import os
-from pathlib import Path
 import signal
 import ssl
 import subprocess
+import sys
+from io import TextIOWrapper
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
 import websockets
 from websockets.typing import Origin
+
+from client.args import (
+    Args,
+    parse_args,
+)
 from common.data import (
     ErrorResp,
     ExitResp,
@@ -23,16 +31,10 @@ from common.data import (
     deserialize,
     serialize,
 )
-import logging
 from common.log import InterceptHandler
-from client.args import (
-    Args,
-    parse_args,
-)
-
-from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+
     from _typeshed import SupportsWrite
     Logfile = SupportsWrite[str]
 else:
@@ -150,6 +152,7 @@ def __rsync(args: Args):
         f"/usr/bin/ssh {args.ssh_args} -p {str(args.server_ssh_port)}",
         "--progress",
         "--mkpath",
+        "--delete",
         args.target_path,
         *args.assets,
         args.rsync_url(),
